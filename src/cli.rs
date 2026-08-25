@@ -2,7 +2,7 @@
 //! apart from the code that consumes them so `--help` reads as one unit.
 
 use clap::{ArgAction, Parser, ValueEnum};
-use std::path::PathBuf;
+use std::{io::IsTerminal, path::PathBuf};
 
 #[derive(Parser)]
 #[command(version, about = "compile tracing scripts to bpf and run them")]
@@ -24,6 +24,19 @@ pub struct Cli {
     /// --log-format '{{"ts":"{time}","level":"{level}","msg":"{msg}"}}'
     #[arg(long, value_name = "TEMPLATE")]
     pub log_format: Option<String>,
+}
+
+impl Cli {
+    /// Whether to emit styles.
+    pub fn color(&self) -> bool {
+        match self.color {
+            Color::Always => true,
+            Color::Never => false,
+            Color::Auto => {
+                std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none()
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, ValueEnum)]

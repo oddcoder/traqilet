@@ -5,13 +5,13 @@ edition = "2024"
 rust-version = "1.87"
 
 [dependencies]
-annotate-snippets = "0.12"
+ariadne = "0.6"
 aya = "0.14"
 clap = { version = "4.6", features = ["derive"] }
 env_logger = "0.11"
 inkwell = { version = "0.10", default-features = false }
 log = "0.4"
-rhai = { version = "=1.25.1", default-features = false }
+logos = "0.16"
 
 [features]
 default = [

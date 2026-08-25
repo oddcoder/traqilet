@@ -5,10 +5,11 @@ use crate::{
     cli::{Cli, Color},
     fmt::{Spec, Val},
 };
-use env_logger::{Builder, Target, WriteStyle};
+use env_logger::{Builder, Target, WriteStyle, fmt::Formatter};
+use log::Record;
 use std::{
     env,
-    io::Write,
+    io::{self, Write},
     mem,
     process::exit,
     sync::atomic::{AtomicU64, Ordering},
@@ -106,6 +107,49 @@ fn filter(verbose: u8) -> &'static str {
     }
 }
 
+fn write_record(
+    f: &mut Formatter,
+    r: &Record<'_>,
+    pieces: &[Piece],
+    start: Instant,
+) -> io::Result<()> {
+    // a script's own output is the tool's data: bare, so it pipes cleanly
+    if r.target() == "script" {
+        return writeln!(f, "{}", r.args());
+    }
+    static LAST: AtomicU64 = AtomicU64::new(0);
+    let mono = start.elapsed();
+    let prev = LAST.swap(mono.as_nanos() as u64, Ordering::Relaxed);
+    let delta = match prev {
+        0 => Duration::ZERO,
+        p => mono.saturating_sub(Duration::from_nanos(p)),
+    };
+    let human = f.timestamp_millis();
+    let lvl_style = f.default_level_style(r.level());
+    for piece in pieces {
+        let (field, spec) = match piece {
+            Piece::Lit(t) => {
+                write!(f, "{t}")?;
+                continue;
+            }
+            Piece::Field(field, spec) => (field, spec),
+        };
+        match field {
+            Field::Time => write!(f, "{}", spec.render(Val::Str(&human.to_string())))?,
+            Field::Mono => write!(f, "{}", spec.render(Val::Num(mono.as_secs_f64())))?,
+            Field::Delta => write!(f, "{}", spec.render(Val::Num(delta.as_secs_f64())))?,
+            // colour wraps the padded text, so alignment is unaffected
+            Field::Level => {
+                let t = spec.render(Val::Str(r.level().as_str()));
+                write!(f, "{lvl_style}{t}{lvl_style:#}")?;
+            }
+            Field::Src => write!(f, "{}", spec.render(Val::Str(r.target())))?,
+            Field::Msg => write!(f, "{}", spec.render(Val::Str(&r.args().to_string())))?,
+        }
+    }
+    writeln!(f)
+}
+
 pub fn init(cli: &Cli) {
     let filter = env::var("RUST_LOG").unwrap_or_else(|_| filter(cli.verbose).to_owned());
 
@@ -122,42 +166,6 @@ pub fn init(cli: &Cli) {
         .parse_filters(&filter)
         .target(Target::Stdout)
         .write_style(style)
-        .format(move |f, r| {
-            // a script's own output is the tool's data: bare, so it pipes cleanly
-            if r.target() == "script" {
-                return writeln!(f, "{}", r.args());
-            }
-            static LAST: AtomicU64 = AtomicU64::new(0);
-            let mono = start.elapsed();
-            let prev = LAST.swap(mono.as_nanos() as u64, Ordering::Relaxed);
-            let delta = match prev {
-                0 => Duration::ZERO,
-                p => mono.saturating_sub(Duration::from_nanos(p)),
-            };
-            let human = f.timestamp_millis();
-            let lvl_style = f.default_level_style(r.level());
-            for piece in &pieces {
-                let (field, spec) = match piece {
-                    Piece::Lit(t) => {
-                        write!(f, "{t}")?;
-                        continue;
-                    }
-                    Piece::Field(field, spec) => (field, spec),
-                };
-                match field {
-                    Field::Time => write!(f, "{}", spec.render(Val::Str(&human.to_string())))?,
-                    Field::Mono => write!(f, "{}", spec.render(Val::Num(mono.as_secs_f64())))?,
-                    Field::Delta => write!(f, "{}", spec.render(Val::Num(delta.as_secs_f64())))?,
-                    // colour wraps the padded text, so alignment is unaffected
-                    Field::Level => {
-                        let t = spec.render(Val::Str(r.level().as_str()));
-                        write!(f, "{lvl_style}{t}{lvl_style:#}")?;
-                    }
-                    Field::Src => write!(f, "{}", spec.render(Val::Str(r.target())))?,
-                    Field::Msg => write!(f, "{}", spec.render(Val::Str(&r.args().to_string())))?,
-                }
-            }
-            writeln!(f)
-        })
+        .format(move |f, r| write_record(f, r, &pieces, start))
         .init();
 }

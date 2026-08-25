@@ -263,8 +263,8 @@ mod tests {
         );
         assert_eq!(p(".6").render(Val::Num(1.5)), format!("{:.6}", 1.5));
         assert_eq!(
-            p("10.2").render(Val::Num(3.14159)),
-            format!("{:10.2}", 3.14159)
+            p("10.2").render(Val::Num(1.23456)),
+            format!("{:10.2}", 1.23456)
         );
         assert_eq!(p("0>5").render(Val::Num(42.0)), format!("{:0>5}", 42.0));
         assert_eq!(p("6").render(Val::Num(12.0)), format!("{:6}", 12.0));

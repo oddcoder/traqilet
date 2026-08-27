@@ -111,7 +111,8 @@ impl Parser {
     fn struct_item(&mut self, attrs: Vec<Attr>, start: Span) -> PResult<Struct> {
         self.bump(); // `struct`
         let name = self.ident("a name after `struct`")?;
-        let open = self.expect(&Tok::LBrace, "`{`")?;
+        let params = self.params()?;
+        let open = self.expect(&Tok::LBrace, "`{` or `;`")?;
         let fields = self.comma_separated(&Tok::RBrace, open, "`}`", |p| {
             let f = p.ident("a field name")?;
             p.expect(&Tok::Colon, "`:` and a type")?;
@@ -121,8 +122,39 @@ impl Parser {
         Ok(Struct {
             attrs,
             name,
+            params,
             fields,
             span: start.to(end),
+        })
+    }
+
+    /// `(K, V, const N: size)`, or nothing at all.
+    fn params(&mut self) -> PResult<Vec<Param>> {
+        if !self.at(&Tok::LParen) {
+            return Ok(Vec::new());
+        }
+        let open = self.span();
+        self.bump();
+        let params = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.param())?;
+        self.expect_close(&Tok::RParen, "`)`", open)?;
+        Ok(params)
+    }
+
+    /// A bound type (`K`), a bound index (`const N: size`), or a value (`key: K`).
+    fn param(&mut self) -> PResult<Param> {
+        let start = self.span();
+        let is_const = self.eat(&Tok::Const);
+        let name = self.ident("a parameter name")?;
+        let ty = if self.eat(&Tok::Colon) {
+            Some(self.ty()?)
+        } else {
+            None
+        };
+        Ok(Param {
+            name,
+            is_const,
+            ty,
+            span: start.to(self.prev_end()),
         })
     }
 
@@ -131,8 +163,7 @@ impl Parser {
         self.bump(); // `fn`
         let name = self.ident("a name after `fn`")?;
         let open = self.expect(&Tok::LParen, "`(`")?;
-        let params =
-            self.comma_separated(&Tok::RParen, open, "`)`", |p| p.ident("a parameter name"))?;
+        let params = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.param())?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
         let body = self.block()?;
         let span = start.to(body.span);

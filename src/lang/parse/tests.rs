@@ -246,6 +246,54 @@ fn attribute_arguments() {
 }
 
 #[test]
+fn a_declaration_may_bind_parameters() {
+    let items = ok("struct HashMap(K, V, const N: size, key: K) { a: u32 }");
+    let Some(Item::Struct(r)) = items.into_iter().next() else {
+        panic!("expected a struct")
+    };
+    let bound: Vec<(&str, bool, bool)> = r
+        .params
+        .iter()
+        .map(|p| (p.name.name.as_str(), p.is_const, p.ty.is_some()))
+        .collect();
+    assert_eq!(
+        bound,
+        [
+            ("K", false, false),
+            ("V", false, false),
+            ("N", true, true),
+            ("key", false, true),
+        ]
+    );
+    let Some(Type {
+        ty: Ty::Name(n, args),
+        ..
+    }) = &r.params[2].ty
+    else {
+        panic!("expected a named type")
+    };
+    assert_eq!((n.name.as_str(), args.len()), ("size", 0));
+    assert_eq!(r.fields.len(), 1, "the body is still a body");
+}
+
+#[test]
+fn parameters_are_optional_at_both_levels() {
+    let params = |src: &str| match ok(src).into_iter().next() {
+        Some(Item::Fn(f)) => f.params.len(),
+        other => panic!("expected a fn, got {other:?}"),
+    };
+    assert_eq!(params("fn h(value: u64, const B: size) { x = 1; }"), 2);
+    assert_eq!(params("fn h(a, b) { x = 1; }"), 2);
+    assert_eq!(params("fn h() { x = 1; }"), 0);
+
+    let Some(Item::Struct(r)) = ok("struct Io { pid: u32 }").into_iter().next() else {
+        panic!("expected a struct")
+    };
+    assert!(r.params.is_empty(), "no parentheses means nothing is bound");
+    assert_eq!(errs("fn h { x = 1; }").len(), 1);
+}
+
+#[test]
 fn a_struct_keeps_its_attributes() {
     let items = ok("#[host] #[link(kind = linux.BPF_MAP_TYPE_HASH)] struct Io { pid: u32 }");
     let Some(Item::Struct(r)) = items.into_iter().next() else {

@@ -22,6 +22,14 @@ pub enum Item {
     Fn(Func),
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Param {
+    pub is_const: bool,
+    pub name: Ident,
+    pub ty: Option<Type>,
+    pub span: Span,
+}
+
 /// `lat = hist(64);`, `const MAXARG = 20;`, `#[host] pending = hash(10240, u32, Row);`
 #[derive(Debug, PartialEq)]
 pub struct Global {
@@ -38,6 +46,7 @@ pub struct Global {
 pub struct Struct {
     pub attrs: Vec<Attr>,
     pub name: Ident,
+    pub params: Vec<Param>,
     pub fields: Vec<(Ident, Type)>,
     pub span: Span,
 }
@@ -47,7 +56,7 @@ pub struct Struct {
 pub struct Func {
     pub attrs: Vec<Attr>,
     pub name: Ident,
-    pub params: Vec<Ident>,
+    pub params: Vec<Param>,
     pub body: Block,
     pub span: Span,
 }

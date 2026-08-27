@@ -1,0 +1,28 @@
+//! A per-CPU value gives every CPU its own copy.
+
+#[link(kind = linux.BPF_MAP_TYPE_PERCPU_ARRAY)]
+struct PerCpu(T);
+
+/// Makes one `T` per CPU, each its default value.
+#[link(host = linux.BPF_MAP_CREATE)]
+extern fn percpu(T) -> PerCpu(T);
+
+/// Reads this CPU's copy. There is no key to give, because the CPU is the key.
+#[link(kernel = linux.bpf_map_lookup_elem)]
+extern fn PerCpu.get() -> T;
+
+/// `c = v` writes this CPU's copy, and is the store half of `c += 1`.
+#[link(kernel = linux.bpf_map_update_elem)]
+extern fn PerCpu.set(value: T);
+
+/// `c[cpu]` reads one CPU's copy from the host.
+#[link(host = linux.BPF_MAP_LOOKUP_ELEM)]
+extern fn PerCpu.get(cpu: u32) -> T;
+
+/// Gives every CPU number, for `for cpu in c.iter()`.
+#[link(host = linux.BPF_MAP_LOOKUP_ELEM)]
+extern fn PerCpu.iter() -> [u32];
+
+/// Puts every CPU's copy back to its default value.
+#[link(host = linux.BPF_MAP_UPDATE_ELEM)]
+extern fn PerCpu.clear();

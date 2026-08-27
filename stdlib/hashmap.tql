@@ -1,0 +1,35 @@
+//! A hash map is shared between your probes and your handlers.
+
+#[link(kind = linux.BPF_MAP_TYPE_HASH)]
+struct HashMap(K, V, const N: size);
+
+/// Makes a map of at most `N` entries, keyed by the first type and holding the
+/// second. `N` is a hard limit.
+#[link(host = linux.BPF_MAP_CREATE)]
+extern fn hashmap(K, V, const N: size) -> HashMap(K, V, N);
+
+/// `m[k]` reads the value stored for that key. A key that was never set is an error
+/// rather than a zero, so ask `k in m` first.
+#[link(host = linux.BPF_MAP_LOOKUP_ELEM, kernel = linux.bpf_map_lookup_elem)]
+extern fn HashMap.get(key: K) -> V;
+
+/// `m[k] = v` stores a value, replacing whatever was there.
+#[link(host = linux.BPF_MAP_UPDATE_ELEM, kernel = linux.bpf_map_update_elem)]
+extern fn HashMap.set(key: K, value: V);
+
+/// `k in m` says whether that key is stored.
+#[link(host = linux.BPF_MAP_LOOKUP_ELEM, kernel = linux.bpf_map_lookup_elem)]
+extern fn HashMap.contains(key: K) -> bool;
+
+/// Forgets one key. Deleting a key that is not there is not an error.
+#[link(host = linux.BPF_MAP_DELETE_ELEM, kernel = linux.bpf_map_delete_elem)]
+extern fn HashMap.delete(key: K);
+
+/// Gives every key stored, for `for k in m.keys()`. The order is whatever the table
+/// happens to hold.
+#[link(host = linux.BPF_MAP_GET_NEXT_KEY, kernel = linux.bpf_for_each_map_elem)]
+extern fn HashMap.keys() -> [K];
+
+/// Empties the map.
+#[link(host = linux.BPF_MAP_DELETE_BATCH, kernel = linux.bpf_for_each_map_elem)]
+extern fn HashMap.clear();

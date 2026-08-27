@@ -1,0 +1,21 @@
+//! A slice holds a fixed number of slots, indexed by position.
+
+#[link(kind = linux.BPF_MAP_TYPE_ARRAY)]
+struct Slice(T, const N: size);
+
+/// Makes a slice of `N` slots of `T`, every slot is initialized to its
+/// default value.
+#[link(host = linux.BPF_MAP_CREATE)]
+extern fn slice(T, const N: size) -> Slice(T, N);
+
+/// `s[i]` reads the slot at that index.
+#[link(host = linux.BPF_MAP_LOOKUP_ELEM, kernel = linux.bpf_map_lookup_elem)]
+extern fn Slice.get(index: u32) -> T;
+
+/// `s[i] = v` writes that slot.
+#[link(host = linux.BPF_MAP_UPDATE_ELEM, kernel = linux.bpf_map_update_elem)]
+extern fn Slice.set(index: u32, value: T);
+
+/// Puts every slot back to its default value.
+#[link(host = linux.BPF_MAP_UPDATE_ELEM)]
+extern fn Slice.clear();

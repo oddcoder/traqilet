@@ -28,6 +28,9 @@ pub enum Tok {
     /// `key in map`, and the separator in `for x in xs`.
     #[token("in")]
     In,
+    /// Marks a declaration whose implementation is elsewhere.
+    #[token("extern")]
+    Extern,
     #[token("const")]
     Const,
     #[token("struct")]
@@ -110,6 +113,9 @@ pub enum Tok {
     Ne,
     #[token("+=")]
     PlusEq,
+    /// The return type of a declaration: `fn hashmap.get(key: K) -> V;`
+    #[token("->")]
+    Arrow,
     #[token("-=")]
     MinusEq,
     #[token("<<")]
@@ -144,6 +150,7 @@ impl fmt::Display for Tok {
             Tok::LineComment => "//",
             Tok::BlockComment => "/*",
             Tok::In => "in",
+            Tok::Extern => "extern",
             Tok::Const => "const",
             Tok::Struct => "struct",
             Tok::Fn => "fn",
@@ -185,6 +192,7 @@ impl fmt::Display for Tok {
             Tok::EqEq => "==",
             Tok::Ne => "!=",
             Tok::PlusEq => "+=",
+            Tok::Arrow => "->",
             Tok::MinusEq => "-=",
             Tok::Shl => "<<",
             Tok::Shr => ">>",
@@ -408,6 +416,9 @@ mod tests {
     #[test]
     fn the_reserved_set_is_closed() {
         let reserved = [
+            ("extern", Tok::Extern),
+            ("const", Tok::Const),
+            ("in", Tok::In),
             ("struct", Tok::Struct),
             ("fn", Tok::Fn),
             ("if", Tok::If),
@@ -690,8 +701,8 @@ mod tests {
         assert_eq!(toks("< << <="), [Tok::Lt, Tok::Shl, Tok::Le]);
         assert_eq!(toks("& &&"), [Tok::Amp, Tok::AndAnd]);
         assert_eq!(
-            toks("+ += - -="),
-            [Tok::Plus, Tok::PlusEq, Tok::Minus, Tok::MinusEq]
+            toks("+ += - -> -="),
+            [Tok::Plus, Tok::PlusEq, Tok::Minus, Tok::Arrow, Tok::MinusEq]
         );
     }
 

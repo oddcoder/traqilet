@@ -41,11 +41,15 @@ impl Parser {
         let start = self.span();
         let attrs = self.attrs()?;
 
+        let is_extern = self.eat(&Tok::Extern);
         if self.at(&Tok::Struct) {
-            return self.struct_item(attrs, start).map(Item::Struct);
+            return self.struct_item(attrs, start, is_extern).map(Item::Struct);
         }
         if self.at(&Tok::Fn) {
-            return self.fn_item(attrs, start).map(Item::Fn);
+            return self.fn_item(attrs, start, is_extern).map(Item::Fn);
+        }
+        if is_extern {
+            return Err(self.expected("`fn` or `struct` after `extern`"));
         }
         self.global(attrs, start).map(Item::Global)
     }
@@ -108,11 +112,21 @@ impl Parser {
     }
 
     /// `struct Io { pid: u32, comm: str(16) }`
-    fn struct_item(&mut self, attrs: Vec<Attr>, start: Span) -> PResult<Struct> {
+    fn struct_item(&mut self, attrs: Vec<Attr>, start: Span, is_extern: bool) -> PResult<Struct> {
         self.bump(); // `struct`
         let name = self.ident("a name after `struct`")?;
         let params = self.params()?;
-        let open = self.expect(&Tok::LBrace, "`{` or `;`")?;
+        if is_extern {
+            self.expect_semi()?;
+            return Ok(Struct {
+                attrs,
+                name,
+                params,
+                fields: Vec::new(),
+                span: start.to(self.prev_end()),
+            });
+        }
+        let open = self.expect(&Tok::LBrace, "`{`")?;
         let fields = self.comma_separated(&Tok::RBrace, open, "`}`", |p| {
             let f = p.ident("a field name")?;
             p.expect(&Tok::Colon, "`:` and a type")?;
@@ -159,20 +173,24 @@ impl Parser {
     }
 
     /// `#[kprobe(vfs_read)] fn enter() { .. }`
-    fn fn_item(&mut self, attrs: Vec<Attr>, start: Span) -> PResult<Func> {
+    fn fn_item(&mut self, attrs: Vec<Attr>, start: Span, is_extern: bool) -> PResult<Func> {
         self.bump(); // `fn`
         let name = self.ident("a name after `fn`")?;
         let open = self.expect(&Tok::LParen, "`(`")?;
         let params = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.param())?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
-        let body = self.block()?;
-        let span = start.to(body.span);
+        let body = if is_extern {
+            self.expect_semi()?;
+            None
+        } else {
+            Some(self.block()?)
+        };
         Ok(Func {
             attrs,
             name,
             params,
             body,
-            span,
+            span: start.to(self.prev_end()),
         })
     }
 
@@ -202,7 +220,10 @@ impl Parser {
     /// To the next place an item can start again.
     fn sync_to_item(&mut self) {
         while let Some(t) = self.tok() {
-            if matches!(t, Tok::Hash | Tok::Const | Tok::Struct | Tok::Fn) {
+            if matches!(
+                t,
+                Tok::Hash | Tok::Const | Tok::Struct | Tok::Fn | Tok::Extern
+            ) {
                 return;
             }
             self.bump();

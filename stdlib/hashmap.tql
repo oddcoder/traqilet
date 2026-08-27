@@ -1,7 +1,7 @@
 //! A hash map is shared between your probes and your handlers.
 
 #[link(kind = linux.BPF_MAP_TYPE_HASH)]
-struct HashMap(K, V, const N: size);
+extern struct HashMap(K, V, const N: size);
 
 /// Makes a map of at most `N` entries, keyed by the first type and holding the
 /// second. `N` is a hard limit.

@@ -14,7 +14,7 @@ fn errs(src: &str) -> Vec<String> {
 
 fn body(src: &str) -> Vec<Stmt> {
     match ok(&format!("fn f() {{ {src} }}")).into_iter().next() {
-        Some(Item::Fn(f)) => f.body.stmts,
+        Some(Item::Fn(f)) => f.body.expect("a script fn has a body").stmts,
         other => panic!("expected a fn, got {other:?}"),
     }
 }
@@ -243,6 +243,41 @@ fn attribute_arguments() {
     };
     assert_eq!(k.name, "secs");
     assert_eq!(**v, AttrArg::Int(1));
+}
+
+#[test]
+fn an_extern_declaration_has_no_body() {
+    let items = ok("extern fn hashmap(K, V, const N: size);");
+    let Some(Item::Fn(f)) = items.into_iter().next() else {
+        panic!("expected a fn")
+    };
+    assert_eq!(f.params.len(), 3);
+    assert!(
+        f.body.is_none(),
+        "an extern declaration has no body to parse"
+    );
+
+    assert_eq!(errs("extern fn f() { x = 1; }"), ["expected `;`"]);
+    assert_eq!(
+        errs("extern x = 1;"),
+        ["expected `fn` or `struct` after `extern`, found `x`"]
+    );
+}
+
+#[test]
+fn an_extern_struct_is_declared_without_a_body() {
+    let items = ok("extern struct HashMap(K, V, const N: size);");
+    let Some(Item::Struct(r)) = items.into_iter().next() else {
+        panic!("expected a struct")
+    };
+    assert_eq!(r.params.len(), 3);
+    assert!(r.fields.is_empty());
+
+    assert_eq!(
+        errs("struct HashMap(K, V, const N: size);"),
+        ["expected `{`, found `;`"]
+    );
+    assert_eq!(errs("extern struct Io { pid: u32 }"), ["expected `;`"]);
 }
 
 #[test]

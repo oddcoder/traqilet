@@ -57,7 +57,7 @@ pub struct Func {
     pub attrs: Vec<Attr>,
     pub name: Ident,
     pub params: Vec<Param>,
-    pub body: Block,
+    pub body: Option<Block>,
     pub span: Span,
 }
 

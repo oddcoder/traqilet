@@ -1,7 +1,7 @@
 //! A per-CPU value gives every CPU its own copy.
 
 #[link(kind = linux.BPF_MAP_TYPE_PERCPU_ARRAY)]
-struct PerCpu(T);
+extern struct PerCpu(T);
 
 /// Makes one `T` per CPU, each its default value.
 #[link(host = linux.BPF_MAP_CREATE)]

@@ -1,7 +1,7 @@
 //! A slice holds a fixed number of slots, indexed by position.
 
 #[link(kind = linux.BPF_MAP_TYPE_ARRAY)]
-struct Slice(T, const N: size);
+extern struct Slice(T, const N: size);
 
 /// Makes a slice of `N` slots of `T`, every slot is initialized to its
 /// default value.

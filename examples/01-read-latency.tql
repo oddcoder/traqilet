@@ -1,0 +1,24 @@
+#!/usr/bin/env traqilet
+
+start = hashmap(u64, u64, 10240);
+buckets = hist(128);
+
+// record timestamp of virtual file system read indexed by thread id
+#[kprobe(linux.vfs_read)]
+fn enter() {
+    start[linux.tid] = linux.monotonic_ns;
+}
+
+// collect how long it took to finish the vfs read
+#[kretprobe(linux.vfs_read)]
+fn ret() {
+    if !(linux.tid in start) { return; }
+    t0 = start[linux.tid];
+    buckets.add((linux.monotonic_ns - t0));
+    start.delete(linux.tid);
+}
+
+#[exit]
+fn report() {
+    info(buckets);
+}

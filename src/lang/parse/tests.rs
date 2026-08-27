@@ -246,6 +246,29 @@ fn attribute_arguments() {
 }
 
 #[test]
+fn a_function_may_be_an_operation_on_a_type() {
+    let items = ok("extern fn HashMap.get(key: K) -> V;");
+    let Some(Item::Fn(f)) = items.into_iter().next() else {
+        panic!("expected a fn")
+    };
+    assert_eq!(f.recv.as_ref().map(|r| r.name.as_str()), Some("HashMap"));
+    assert_eq!(f.name.name, "get");
+
+    let items = ok("extern fn hashmap(K, V, const N: size);");
+    let Some(Item::Fn(f)) = items.into_iter().next() else {
+        panic!("expected a fn")
+    };
+    assert!(f.recv.is_none());
+    assert_eq!(f.name.name, "hashmap");
+
+    assert_eq!(errs("extern fn a.b.c();"), ["expected `(`, found `.`"]);
+    assert_eq!(
+        errs("extern fn HashMap.();"),
+        ["expected an operation name, found `(`"]
+    );
+}
+
+#[test]
 fn a_declaration_may_state_what_it_returns() {
     let items = ok("extern fn hashmap(K, V, const N: size) -> HashMap(K, V, N);");
     let Some(Item::Fn(f)) = items.into_iter().next() else {

@@ -55,6 +55,8 @@ pub struct Struct {
 #[derive(Debug, PartialEq)]
 pub struct Func {
     pub attrs: Vec<Attr>,
+    /// The type this is an operation on: `fn hashmap.get(..)`.
+    pub recv: Option<Ident>,
     pub name: Ident,
     pub params: Vec<Param>,
     pub ret: Option<Type>,

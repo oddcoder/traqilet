@@ -175,7 +175,13 @@ impl Parser {
     /// `#[kprobe(vfs_read)] fn enter() { .. }`
     fn fn_item(&mut self, attrs: Vec<Attr>, start: Span, is_extern: bool) -> PResult<Func> {
         self.bump(); // `fn`
-        let name = self.ident("a name after `fn`")?;
+        let first = self.ident("a name after `fn`")?;
+        // `HashMap.get`: an operation on a type rather than a free function
+        let (recv, name) = if self.eat(&Tok::Dot) {
+            (Some(first), self.ident("an operation name")?)
+        } else {
+            (None, first)
+        };
         let open = self.expect(&Tok::LParen, "`(`")?;
         let params = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.param())?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
@@ -192,6 +198,7 @@ impl Parser {
         };
         Ok(Func {
             attrs,
+            recv,
             name,
             params,
             ret,

@@ -61,7 +61,7 @@ pub struct Attr {
 
 #[derive(Debug, PartialEq)]
 pub enum AttrArg {
-    /// `vfs_read`, or `syscalls::sys_enter_execve`
+    /// `linux.vfs_read`, or `linux.syscalls.sys_enter_execve`
     Path(Vec<Ident>),
     Int(u64),
     Str(String),

@@ -70,8 +70,6 @@ pub enum Tok {
     Semi,
     #[token(":")]
     Colon,
-    #[token("::")]
-    ColonColon,
     #[token(".")]
     Dot,
     #[token("..")]
@@ -167,7 +165,6 @@ impl fmt::Display for Tok {
             Tok::Comma => ",",
             Tok::Semi => ";",
             Tok::Colon => ":",
-            Tok::ColonColon => "::",
             Tok::Dot => ".",
             Tok::DotDot => "..",
             Tok::Hash => "#",
@@ -689,7 +686,6 @@ mod tests {
     #[test]
     fn operators_prefer_the_longer_match() {
         assert_eq!(toks("= =="), [Tok::Eq, Tok::EqEq]);
-        assert_eq!(toks(": ::"), [Tok::Colon, Tok::ColonColon]);
         assert_eq!(toks(". .."), [Tok::Dot, Tok::DotDot]);
         assert_eq!(toks("< << <="), [Tok::Lt, Tok::Shl, Tok::Le]);
         assert_eq!(toks("& &&"), [Tok::Amp, Tok::AndAnd]);

@@ -218,8 +218,16 @@ fn a_global_may_carry_a_type() {
 }
 
 #[test]
+fn a_path_is_separated_by_dots() {
+    let found = errs("#[tracepoint(syscalls::sys_enter_execve)] fn f() {}");
+    assert_eq!(found.len(), 1, "{found:#?}");
+    assert!(found[0].contains("`)`"), "got {:?}", found[0]);
+}
+
+#[test]
 fn attribute_arguments() {
-    let items = ok("#[tracepoint(syscalls::sys_enter_execve)] #[interval(secs = 1)] fn f() {}");
+    let items =
+        ok("#[tracepoint(linux.syscalls.sys_enter_execve)] #[interval(secs = 1)] fn f() {}");
     let Some(Item::Fn(f)) = items.into_iter().next() else {
         panic!("expected a fn")
     };
@@ -229,7 +237,7 @@ fn attribute_arguments() {
         panic!("expected a path")
     };
     let segs: Vec<&str> = p.iter().map(|s| s.name.as_str()).collect();
-    assert_eq!(segs, ["syscalls", "sys_enter_execve"]);
+    assert_eq!(segs, ["linux", "syscalls", "sys_enter_execve"]);
     let AttrArg::Named(k, v) = &f.attrs[1].args[0] else {
         panic!("expected a named argument")
     };

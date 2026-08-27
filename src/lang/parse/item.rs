@@ -98,7 +98,7 @@ impl Parser {
                     return Ok(AttrArg::Named(first, Box::new(self.attr_arg()?)));
                 }
                 let mut path = vec![first];
-                while self.eat(&Tok::ColonColon) {
+                while self.eat(&Tok::Dot) {
                     path.push(self.ident("a path segment")?);
                 }
                 Ok(AttrArg::Path(path))

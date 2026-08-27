@@ -36,6 +36,7 @@ pub struct Global {
 /// `struct Io { pid: u32, comm: str(16) }`
 #[derive(Debug, PartialEq)]
 pub struct Struct {
+    pub attrs: Vec<Attr>,
     pub name: Ident,
     pub fields: Vec<(Ident, Type)>,
     pub span: Span,

@@ -42,7 +42,7 @@ impl Parser {
         let attrs = self.attrs()?;
 
         if self.at(&Tok::Struct) {
-            return self.struct_item(start).map(Item::Struct);
+            return self.struct_item(attrs, start).map(Item::Struct);
         }
         if self.at(&Tok::Fn) {
             return self.fn_item(attrs, start).map(Item::Fn);
@@ -108,7 +108,7 @@ impl Parser {
     }
 
     /// `struct Io { pid: u32, comm: str(16) }`
-    fn struct_item(&mut self, start: Span) -> PResult<Struct> {
+    fn struct_item(&mut self, attrs: Vec<Attr>, start: Span) -> PResult<Struct> {
         self.bump(); // `struct`
         let name = self.ident("a name after `struct`")?;
         let open = self.expect(&Tok::LBrace, "`{`")?;
@@ -119,6 +119,7 @@ impl Parser {
         })?;
         let end = self.expect_close(&Tok::RBrace, "`}`", open)?;
         Ok(Struct {
+            attrs,
             name,
             fields,
             span: start.to(end),

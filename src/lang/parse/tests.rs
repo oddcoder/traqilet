@@ -246,6 +246,17 @@ fn attribute_arguments() {
 }
 
 #[test]
+fn a_struct_keeps_its_attributes() {
+    let items = ok("#[host] #[link(kind = linux.BPF_MAP_TYPE_HASH)] struct Io { pid: u32 }");
+    let Some(Item::Struct(r)) = items.into_iter().next() else {
+        panic!("expected a struct")
+    };
+    let names: Vec<&str> = r.attrs.iter().map(|a| a.name.name.as_str()).collect();
+    assert_eq!(names, ["host", "link"]);
+    assert_eq!(r.span.lo(), 0);
+}
+
+#[test]
 fn struct_fields_carry_their_own_string_size() {
     let items = ok("struct Ev { pid: u32, comm: str(16), arg: str(ARGSIZE), args: [str(8)] }");
     let Some(Item::Struct(r)) = items.into_iter().next() else {

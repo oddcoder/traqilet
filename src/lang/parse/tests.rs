@@ -246,6 +246,30 @@ fn attribute_arguments() {
 }
 
 #[test]
+fn a_declaration_may_state_what_it_returns() {
+    let items = ok("extern fn hashmap(K, V, const N: size) -> HashMap(K, V, N);");
+    let Some(Item::Fn(f)) = items.into_iter().next() else {
+        panic!("expected a fn")
+    };
+    let Some(Type {
+        ty: Ty::Name(n, args),
+        ..
+    }) = &f.ret
+    else {
+        panic!("expected a named return type")
+    };
+    assert_eq!((n.name.as_str(), args.len()), ("HashMap", 3));
+
+    let states_one = |src: &str| match ok(src).into_iter().next() {
+        Some(Item::Fn(f)) => f.ret.is_some(),
+        other => panic!("expected a fn, got {other:?}"),
+    };
+    assert!(states_one("fn f() -> u64 { return 1; }"));
+    assert!(!states_one("fn f() { x = 1; }"));
+    assert_eq!(errs("extern fn f() ->;"), ["expected a type, found `;`"]);
+}
+
+#[test]
 fn an_extern_declaration_has_no_body() {
     let items = ok("extern fn hashmap(K, V, const N: size);");
     let Some(Item::Fn(f)) = items.into_iter().next() else {

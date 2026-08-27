@@ -179,6 +179,11 @@ impl Parser {
         let open = self.expect(&Tok::LParen, "`(`")?;
         let params = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.param())?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
+        let ret = if self.eat(&Tok::Arrow) {
+            Some(self.ty()?)
+        } else {
+            None
+        };
         let body = if is_extern {
             self.expect_semi()?;
             None
@@ -189,6 +194,7 @@ impl Parser {
             attrs,
             name,
             params,
+            ret,
             body,
             span: start.to(self.prev_end()),
         })

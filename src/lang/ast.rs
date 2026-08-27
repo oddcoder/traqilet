@@ -9,20 +9,20 @@ pub struct Ident {
 }
 
 /// A whole script: the shebang if it had one, then its items.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Script {
     pub shebang: Option<String>,
     pub items: Vec<Item>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Item {
     Global(Global),
     Struct(Struct),
     Fn(Func),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Param {
     pub is_const: bool,
     pub name: Ident,
@@ -31,7 +31,7 @@ pub struct Param {
 }
 
 /// `lat = hist(64);`, `const MAXARG = 20;`, `#[host] pending = hash(10240, u32, Row);`
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Global {
     pub attrs: Vec<Attr>,
     pub is_const: bool,
@@ -42,7 +42,7 @@ pub struct Global {
 }
 
 /// `struct Io { pid: u32, comm: str(16) }`
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Struct {
     pub attrs: Vec<Attr>,
     pub name: Ident,
@@ -52,7 +52,7 @@ pub struct Struct {
 }
 
 /// `#[kprobe(vfs_read)] fn enter() { .. }`
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Func {
     pub attrs: Vec<Attr>,
     /// The type this is an operation on: `fn hashmap.get(..)`.
@@ -65,14 +65,14 @@ pub struct Func {
 }
 
 /// `#[kprobe(vfs_read)]`, `#[interval(secs = 1)]`
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Attr {
     pub name: Ident,
     pub args: Vec<AttrArg>,
     pub span: Span,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum AttrArg {
     /// `linux.vfs_read`, or `linux.syscalls.sys_enter_execve`
     Path(Vec<Ident>),
@@ -110,19 +110,19 @@ pub enum TyArg {
 }
 
 /// `{ .. }`. The span covers the braces, which no statement inside it does.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Block {
     pub stmts: Vec<Stmt>,
     pub span: Span,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Stmt {
     pub stmt: Statement,
     pub span: Span,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Statement {
     Assign {
         target: Expr,
@@ -151,7 +151,7 @@ pub enum Statement {
     Call(Expr),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum StructInit {
     /// `{ kind: EXEC, pid: linux.pid }`
     Named(Vec<(Ident, Expr)>),
@@ -162,13 +162,13 @@ pub enum StructInit {
 /// A loop variable: `for cpu in ..`, or `for (dev, rw) in ..` to unpack a tuple
 /// key. Assignment needs no pattern — its target is an ordinary expression, so
 /// `(dev, rw) = m[k];` unpacks by assigning to a tuple.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Pat {
     pub pat: Pattern,
     pub span: Span,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Pattern {
     Name(Ident),
     Tuple(Vec<Ident>),
@@ -206,14 +206,14 @@ pub enum UnOp {
     Neg,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Expr {
     pub expr: Expression,
     pub span: Span,
 }
 
 /// What an expression *is*, with no position attached.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expression {
     Int(u64),
     Str(String),

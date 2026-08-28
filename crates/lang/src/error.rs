@@ -1,6 +1,6 @@
 //! One error type for the whole front end.
 
-use super::Span;
+use crate::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Error {

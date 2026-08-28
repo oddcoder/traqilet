@@ -1,6 +1,6 @@
 use super::parse;
-use crate::lang::Span;
-use crate::lang::ast::*;
+use traqilet_lang::Span;
+use traqilet_lang::ast::*;
 
 fn ok(src: &str) -> Vec<Item> {
     let p = parse(src);

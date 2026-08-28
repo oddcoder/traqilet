@@ -1,8 +1,8 @@
 //! Recursive descent over the [`logos`](super::lex) token stream.
 
-use super::ast::{Ident, Script};
 use super::lex::{Tok, Token, lex};
-use super::{DUMMY_SP, Error, Span};
+use traqilet_lang::ast::{Ident, Script};
+use traqilet_lang::{DUMMY_SP, Error, Span};
 
 // One file per construct, as rustc's parser is laid out.
 mod expr;

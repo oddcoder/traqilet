@@ -546,7 +546,12 @@ dependencies = [
  "env_logger",
  "log",
  "logos",
+ "traqilet-lang",
 ]
+
+[[package]]
+name = "traqilet-lang"
+version = "0.1.0"
 
 [[package]]
 name = "unicode-ident"

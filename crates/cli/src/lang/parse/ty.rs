@@ -1,6 +1,6 @@
 use super::{PResult, Parser};
-use crate::lang::ast::*;
 use crate::lang::lex::Tok;
+use traqilet_lang::ast::*;
 
 impl Parser {
     pub(super) fn ty(&mut self) -> PResult<Type> {

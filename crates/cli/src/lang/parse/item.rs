@@ -1,7 +1,7 @@
 use super::{PResult, Parser};
-use crate::lang::Span;
-use crate::lang::ast::*;
 use crate::lang::lex::Tok;
+use traqilet_lang::Span;
+use traqilet_lang::ast::*;
 
 impl Parser {
     pub(super) fn script(&mut self) -> Script {

@@ -1,8 +1,8 @@
 //! Tokens, with byte spans.
 
-use super::{Error, Span};
 use logos::{FilterResult, Logos};
 use std::{fmt, str::Chars};
+use traqilet_lang::{Error, Span};
 
 #[derive(Logos, Debug, Clone, PartialEq)]
 #[logos(error = String)]

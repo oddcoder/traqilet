@@ -1,8 +1,8 @@
 //! Diagnostics wrapper around [`log`] and [`ariadne`].
 
-use crate::lang::{Error, Span};
 use ariadne::{CharSet, Color, Config, IndexType, Label, Report, ReportKind, Source};
 use log::error;
+use traqilet_lang::{Error, Span};
 
 const WRONG: Color = Color::Red;
 const SECOND_LOOK: Color = Color::Fixed(81);

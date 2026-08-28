@@ -1,9 +1,9 @@
 use super::{PResult, Parser};
-use crate::lang::Error;
-use crate::lang::Span;
-use crate::lang::ast::*;
 use crate::lang::lex::Tok;
 use std::ops::Bound;
+use traqilet_lang::Error;
+use traqilet_lang::Span;
+use traqilet_lang::ast::*;
 
 /// Binding power, loosest first. Declaration order *is* the table: `PartialOrd`
 /// does the comparing, so no level names a number and inserting one is a

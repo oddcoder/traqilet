@@ -1,7 +1,7 @@
 use super::{PResult, Parser};
-use crate::lang::Error;
-use crate::lang::ast::*;
 use crate::lang::lex::Tok;
+use traqilet_lang::Error;
+use traqilet_lang::ast::*;
 
 impl Parser {
     /// `{ .. }`, recovering statement by statement so one bad statement does not

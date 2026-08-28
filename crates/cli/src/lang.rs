@@ -1,12 +1,6 @@
-//! The front end: tokens, a typed AST, and a parser producing it.
-pub mod ast;
-mod error;
+//! The front end: tokens, and a parser building the tree out of them.
 pub mod lex;
 pub mod parse;
-pub mod span;
-
-pub use error::Error;
-pub use span::{DUMMY_SP, Span};
 
 #[cfg(test)]
 const EXAMPLES_DIR: &str = concat!(env!("CARGO_WORKSPACE_DIR"), "examples");

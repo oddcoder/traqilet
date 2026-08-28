@@ -1,6 +1,6 @@
 //! The typed AST. Every node carries a byte span.
 
-pub use super::Span;
+pub use crate::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ident {

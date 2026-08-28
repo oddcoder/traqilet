@@ -402,7 +402,10 @@ fn struct_fields_carry_their_own_string_size() {
         panic!("expected a named type")
     };
     assert_eq!(s.name, "str");
-    assert_eq!(args, &[TyArg::Int(16)]);
+    let [TyArg::Index(n)] = &args[..] else {
+        panic!("expected a size")
+    };
+    assert_eq!(sexp(n), "16");
 
     let Ty::Name(_, args) = &r.fields[2].1.ty else {
         panic!("expected a named type")
@@ -416,6 +419,30 @@ fn struct_fields_carry_their_own_string_size() {
     assert_eq!((n.name.as_str(), inner.len()), ("ARGSIZE", 0));
 
     assert!(matches!(&r.fields[3].1.ty, Ty::List(..)));
+}
+
+#[test]
+fn a_type_argument_may_be_arithmetic() {
+    let items = ok("struct S { a: str(N + 1), b: str(B * 2 + 1) }");
+    let Some(Item::Struct(s)) = items.into_iter().next() else {
+        panic!("expected a struct")
+    };
+    let sizes: Vec<String> = s
+        .fields
+        .iter()
+        .map(|(_, t)| match &t.ty {
+            Ty::Name(_, args) => match &args[..] {
+                [TyArg::Index(e)] => sexp(e),
+                other => panic!("expected one size, got {other:?}"),
+            },
+            other => panic!("expected a named type, got {other:?}"),
+        })
+        .collect();
+    assert_eq!(sizes, ["(Add N 1)", "(Add (Mul B 2) 1)"]);
+    assert_eq!(
+        errs("struct S { a: str(str(8) + 1) }"),
+        ["this is a type, and only a size can be an operand"]
+    );
 }
 
 #[test]

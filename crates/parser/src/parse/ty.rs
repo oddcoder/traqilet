@@ -1,5 +1,6 @@
 use super::{PResult, Parser};
 use crate::lex::Tok;
+use traqilet_lang::Error;
 use traqilet_lang::ast::*;
 
 impl Parser {
@@ -42,10 +43,27 @@ impl Parser {
 
     /// what `[str(8)]` in `map(u32, [str(8)])` has to.
     fn ty_arg(&mut self) -> PResult<TyArg> {
-        if let Some(&Tok::Int(n)) = self.tok() {
-            self.bump();
-            return Ok(TyArg::Int(n));
+        if self.at_index() {
+            return Ok(TyArg::Index(self.index_expr()?));
         }
-        Ok(TyArg::Type(self.ty()?))
+        let t = self.ty()?;
+        // `str(str(8) + 1)`: the operator wanted a size on its left and found a type
+        if self.at_binary_op(0) {
+            return Err(Error::new(
+                "this is a type, and only a size can be an operand",
+                t.span,
+            ));
+        }
+        Ok(TyArg::Type(t))
+    }
+
+    /// Whether what comes next is arithmetic rather than a type: a number, a group in
+    /// parentheses, or a name with an operator after it.
+    fn at_index(&self) -> bool {
+        match self.tok() {
+            Some(Tok::Int(_) | Tok::LParen) => true,
+            Some(Tok::Ident(_)) => self.at_binary_op(1),
+            _ => false,
+        }
     }
 }

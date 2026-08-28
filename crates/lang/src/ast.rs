@@ -102,8 +102,8 @@ pub enum Ty {
 /// An argument to an applied type.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TyArg {
-    /// `str(16)` — a size written out. Not a type: `16` names nothing.
-    Int(u64),
+    /// `str(16)`, `Slice(u64, B + 5)`
+    Index(Expr),
     /// `str(ARGSIZE)`, and any nested type such as the `[str(8)]` in
     /// `map(u32, [str(8)])`.
     Type(Type),

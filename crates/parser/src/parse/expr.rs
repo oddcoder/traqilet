@@ -62,6 +62,17 @@ impl Parser {
         })
     }
 
+    /// An index: arithmetic on sizes, with no range and nothing looser.
+    pub(super) fn index_expr(&mut self) -> PResult<Expr> {
+        self.expr_assoc(Bound::Unbounded)
+    }
+
+    /// Whether the token `n` ahead is a binary operator, which is what tells a size
+    /// from a type in `Slice(u64, B + 5)`.
+    pub(super) fn at_binary_op(&self, n: usize) -> bool {
+        self.nth(n).and_then(assoc_op).is_some()
+    }
+
     /// Precedence climbing: one loop, no rule per level.
     fn expr_assoc(&mut self, min: Bound<Prec>) -> PResult<Expr> {
         let mut lhs = self.unary()?;

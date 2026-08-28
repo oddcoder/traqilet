@@ -182,6 +182,7 @@ impl Parser {
     }
 }
 
+#[must_use]
 pub fn parse(src: &str) -> Parsed {
     if src.len() > u32::MAX as usize {
         return Parsed {

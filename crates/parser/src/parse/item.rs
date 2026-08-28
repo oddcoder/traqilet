@@ -1,7 +1,7 @@
 use super::{PResult, Parser};
 use crate::lex::Tok;
 use traqilet_lang::Span;
-use traqilet_lang::ast::*;
+use traqilet_lang::ast::{Attr, AttrArg, Func, Global, Item, Param, Script, Struct};
 
 impl Parser {
     pub(super) fn script(&mut self) -> Script {
@@ -74,7 +74,7 @@ impl Parser {
         if self.at(&Tok::LParen) {
             let paren = self.span();
             self.bump();
-            args = self.comma_separated(&Tok::RParen, paren, "`)`", |p| p.attr_arg())?;
+            args = self.comma_separated(&Tok::RParen, paren, "`)`", Parser::attr_arg)?;
             self.expect_close(&Tok::RParen, "`)`", paren)?;
         }
         let end = self.expect_close(&Tok::RBracket, "`]`", open)?;
@@ -149,7 +149,7 @@ impl Parser {
         }
         let open = self.span();
         self.bump();
-        let params = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.param())?;
+        let params = self.comma_separated(&Tok::RParen, open, "`)`", Parser::param)?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
         Ok(params)
     }
@@ -183,7 +183,7 @@ impl Parser {
             (None, first)
         };
         let open = self.expect(&Tok::LParen, "`(`")?;
-        let params = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.param())?;
+        let params = self.comma_separated(&Tok::RParen, open, "`)`", Parser::param)?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
         let ret = if self.eat(&Tok::Arrow) {
             Some(self.ty()?)

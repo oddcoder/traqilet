@@ -219,6 +219,13 @@ mod tests {
     fn the_marks_carry_their_label_colour() {
         const WRONG_SEQ: &str = "\x1b[31m";
         const SECOND_SEQ: &str = "\x1b[38;5;81m";
+
+        fn line_with<'o>(out: &'o str, needle: &str) -> &'o str {
+            out.lines()
+                .find(|l| l.contains(needle))
+                .unwrap_or_else(|| panic!("no line with {needle:?}:\n{out}"))
+        }
+
         let src = "f(\"x\";";
         let open = src.find('(').unwrap();
         let semi = src.find(';').unwrap();
@@ -227,12 +234,6 @@ mod tests {
             "expected `)`, found `;`",
             Some(("unclosed `(`", Span::new(open, open + 1))),
         );
-
-        fn line_with<'o>(out: &'o str, needle: &str) -> &'o str {
-            out.lines()
-                .find(|l| l.contains(needle))
-                .unwrap_or_else(|| panic!("no line with {needle:?}:\n{out}"))
-        }
 
         assert!(
             out.contains(&format!("{WRONG_SEQ};")),

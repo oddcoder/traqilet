@@ -1,4 +1,5 @@
 use super::parse;
+use std::fmt::Write;
 use traqilet_lang::Span;
 use traqilet_lang::ast::*;
 
@@ -55,7 +56,11 @@ fn sexp(e: &Expr) -> String {
 }
 
 fn args(es: &[Expr]) -> String {
-    es.iter().map(|e| format!(" {}", sexp(e))).collect()
+    let mut s = String::new();
+    for e in es {
+        write!(s, " {}", sexp(e)).unwrap();
+    }
+    s
 }
 
 fn expr_of(src: &str) -> String {
@@ -435,7 +440,7 @@ fn a_type_argument_may_be_arithmetic() {
                 [TyArg::Index(e)] => sexp(e),
                 other => panic!("expected one size, got {other:?}"),
             },
-            other => panic!("expected a named type, got {other:?}"),
+            other @ Ty::List(..) => panic!("expected a named type, got {other:?}"),
         })
         .collect();
     assert_eq!(sizes, ["(Add N 1)", "(Add (Mul B 2) 1)"]);
@@ -456,7 +461,7 @@ fn a_bracketed_type_may_carry_a_length() {
         .iter()
         .map(|(_, t)| match &t.ty {
             Ty::List(_, len) => len.as_ref().map(sexp),
-            other => panic!("expected a bracketed type, got {other:?}"),
+            other @ Ty::Name(..) => panic!("expected a bracketed type, got {other:?}"),
         })
         .collect();
     assert_eq!(

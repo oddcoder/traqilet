@@ -3,7 +3,7 @@ use crate::lex::Tok;
 use std::ops::Bound;
 use traqilet_lang::Error;
 use traqilet_lang::Span;
-use traqilet_lang::ast::*;
+use traqilet_lang::ast::{BinOp, Expr, Expression, Ident, StructInit, UnOp};
 
 /// Binding power, loosest first. Declaration order *is* the table: `PartialOrd`
 /// does the comparing, so no level names a number and inserting one is a
@@ -167,7 +167,7 @@ impl Parser {
     }
 
     fn call_args(&mut self, open: Span) -> PResult<Vec<Expr>> {
-        let args = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.expr())?;
+        let args = self.comma_separated(&Tok::RParen, open, "`)`", Parser::expr)?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
         Ok(args)
     }
@@ -234,7 +234,7 @@ impl Parser {
     /// `[]`, `["a", "b"]`
     fn list_expr(&mut self, start: Span) -> PResult<Expr> {
         self.bump(); // `[`
-        let items = self.comma_separated(&Tok::RBracket, start, "`]`", |p| p.expr())?;
+        let items = self.comma_separated(&Tok::RBracket, start, "`]`", Parser::expr)?;
         let end = self.expect_close(&Tok::RBracket, "`]`", start)?;
         Ok(Expr {
             span: start.to(end),

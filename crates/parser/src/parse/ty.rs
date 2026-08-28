@@ -1,7 +1,7 @@
 use super::{PResult, Parser};
 use crate::lex::Tok;
 use traqilet_lang::Error;
-use traqilet_lang::ast::*;
+use traqilet_lang::ast::{Ty, TyArg, Type};
 
 impl Parser {
     pub(super) fn ty(&mut self) -> PResult<Type> {
@@ -41,7 +41,7 @@ impl Parser {
     fn ty_args(&mut self) -> PResult<Vec<TyArg>> {
         let open = self.span();
         self.bump();
-        let args = self.comma_separated(&Tok::RParen, open, "`)`", |p| p.ty_arg())?;
+        let args = self.comma_separated(&Tok::RParen, open, "`)`", Parser::ty_arg)?;
         self.expect_close(&Tok::RParen, "`)`", open)?;
         Ok(args)
     }

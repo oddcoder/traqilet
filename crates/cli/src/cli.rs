@@ -14,7 +14,7 @@ pub struct Cli {
     #[arg(short, long, action = ArgAction::Count)]
     pub verbose: u8,
 
-    /// when to colourise; auto detects a terminal and honours NO_COLOR
+    /// when to colourise; auto detects a terminal and honours `NO_COLOR`
     #[arg(long, value_enum, default_value_t = Color::Auto, value_name = "WHEN")]
     pub color: Color,
 

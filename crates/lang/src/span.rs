@@ -18,6 +18,7 @@ pub struct Span {
 pub const DUMMY_SP: Span = Span { lo: 0, hi: 0 };
 
 impl Span {
+    #[must_use]
     pub const fn new(lo: usize, hi: usize) -> Span {
         debug_assert!(hi <= u32::MAX as usize, "byte offset exceeds 32 bits");
         debug_assert!(lo <= u32::MAX as usize, "byte offset exceeds 32 bits");
@@ -36,10 +37,12 @@ impl Span {
         }
     }
 
+    #[must_use]
     pub const fn lo(self) -> usize {
         self.lo as usize
     }
 
+    #[must_use]
     pub const fn hi(self) -> usize {
         self.hi as usize
     }
@@ -47,12 +50,14 @@ impl Span {
     /// The span enclosing both, from the earlier start to the later end.
     ///
     /// Order-insensitive. A parser that has the two halves in hand need not know which came first.
+    #[must_use]
     pub fn to(self, end: Span) -> Span {
         Span::new(self.lo().min(end.lo()), self.hi().max(end.hi()))
     }
 
     /// Clamped to something safe to slice `src` with: both ends on character
     /// boundaries, and neither past the end.
+    #[must_use]
     pub fn clamp_to(self, src: &str) -> Span {
         let mut lo = self.lo().min(src.len());
         while !src.is_char_boundary(lo) {
@@ -66,6 +71,7 @@ impl Span {
     }
 
     /// The empty span at the start of this one.
+    #[must_use]
     pub const fn shrink_to_lo(self) -> Span {
         Span {
             lo: self.lo,
@@ -74,6 +80,7 @@ impl Span {
     }
 
     /// The empty span just past this one, where a missing terminator belongs.
+    #[must_use]
     pub const fn shrink_to_hi(self) -> Span {
         Span {
             lo: self.hi,

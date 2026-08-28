@@ -1,7 +1,7 @@
 use super::{PResult, Parser};
 use crate::lex::Tok;
 use traqilet_lang::Error;
-use traqilet_lang::ast::*;
+use traqilet_lang::ast::{BinOp, Block, Expression, Pat, Pattern, Statement, Stmt};
 
 impl Parser {
     /// `{ .. }`, recovering statement by statement so one bad statement does not

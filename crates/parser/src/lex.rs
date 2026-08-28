@@ -134,6 +134,7 @@ pub enum Tok {
 
 impl Tok {
     /// Comments and white spaces
+    #[must_use]
     pub fn is_trivia(&self) -> bool {
         matches!(self, Tok::Whitespace | Tok::LineComment | Tok::BlockComment)
     }
@@ -142,11 +143,10 @@ impl Tok {
 impl fmt::Display for Tok {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Tok::Ident(s) => return write!(f, "{s}"),
+            Tok::Ident(s) | Tok::Shebang(s) => return write!(f, "{s}"),
             Tok::Int(n) => return write!(f, "{n}"),
             Tok::Str(s) => return write!(f, "{s:?}"),
             Tok::Whitespace => " ",
-            Tok::Shebang(s) => return write!(f, "{s}"),
             Tok::LineComment => "//",
             Tok::BlockComment => "/*",
             Tok::In => "in",
@@ -342,6 +342,7 @@ fn block_comment(lex: &mut Lexer) -> FilterResult<(), String> {
 
 /// Lexes the whole source. Errors are reported *and* represented in the stream
 /// as [`Tok::Error`], so a caller can keep parsing past one.
+#[must_use]
 pub fn lex(src: &str) -> (Vec<Token>, Vec<Error>) {
     let mut toks = Vec::new();
     let mut errs = Vec::new();

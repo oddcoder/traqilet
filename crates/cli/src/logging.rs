@@ -20,15 +20,15 @@ use std::{
 enum Field {
     /// wall clock, e.g. 2026-08-24T21:59:07.008Z
     Time,
-    /// seconds since traqilet started. Instant is CLOCK_MONOTONIC underneath,
+    /// seconds since traqilet started. Instant is `CLOCK_MONOTONIC` underneath,
     /// so a difference of two of these equals a difference of two
-    /// linux.monotonic_ns values; only the origin differs.
+    /// `linux.monotonic_ns` values; only the origin differs.
     Mono,
     /// seconds since the previous log line
     Delta,
     /// ERROR, WARN, INFO, DEBUG, TRACE
     Level,
-    /// emitting module, e.g. aya_obj::relocation
+    /// emitting module, e.g. `aya_obj::relocation`
     Src,
     Msg,
 }
@@ -113,11 +113,12 @@ fn write_record(
     pieces: &[Piece],
     start: Instant,
 ) -> io::Result<()> {
+    static LAST: AtomicU64 = AtomicU64::new(0);
+
     // a script's own output is the tool's data: bare, so it pipes cleanly
     if r.target() == "script" {
         return writeln!(f, "{}", r.args());
     }
-    static LAST: AtomicU64 = AtomicU64::new(0);
     let mono = start.elapsed();
     let prev = LAST.swap(mono.as_nanos() as u64, Ordering::Relaxed);
     let delta = match prev {

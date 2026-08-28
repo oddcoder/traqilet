@@ -20,6 +20,7 @@ impl Error {
         }
     }
 
+    #[must_use]
     pub fn with_note(mut self, msg: impl Into<String>, span: Span) -> Error {
         self.note = Some((msg.into(), span));
         self

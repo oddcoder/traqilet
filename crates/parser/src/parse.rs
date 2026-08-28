@@ -1,6 +1,6 @@
 //! Recursive descent over the [`logos`](super::lex) token stream.
 
-use super::lex::{Tok, Token, lex};
+use crate::lex::{Tok, Token, lex};
 use traqilet_lang::ast::{Ident, Script};
 use traqilet_lang::{DUMMY_SP, Error, Span};
 

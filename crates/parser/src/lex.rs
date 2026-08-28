@@ -543,7 +543,7 @@ mod tests {
 
     #[test]
     fn tokens_tile_the_whole_source() {
-        let corpus: Vec<String> = std::fs::read_dir(crate::lang::EXAMPLES_DIR)
+        let corpus: Vec<String> = std::fs::read_dir(crate::EXAMPLES_DIR)
             .unwrap()
             .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())
             .collect();

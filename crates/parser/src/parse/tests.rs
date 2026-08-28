@@ -156,7 +156,7 @@ fn const_is_no_longer_available_as_an_identifier() {
 
 #[test]
 fn every_example_parses() {
-    let dir = crate::lang::EXAMPLES_DIR;
+    let dir = crate::EXAMPLES_DIR;
     let mut names: Vec<_> = std::fs::read_dir(dir)
         .expect("examples/ should exist")
         .map(|e| e.unwrap().path())

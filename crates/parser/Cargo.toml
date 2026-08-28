@@ -1,0 +1,9 @@
+[package]
+name = "traqilet-parser"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+logos = { workspace = true }
+traqilet-lang = { workspace = true }

@@ -545,13 +545,21 @@ dependencies = [
  "clap",
  "env_logger",
  "log",
- "logos",
  "traqilet-lang",
+ "traqilet-parser",
 ]
 
 [[package]]
 name = "traqilet-lang"
 version = "0.1.0"
+
+[[package]]
+name = "traqilet-parser"
+version = "0.1.0"
+dependencies = [
+ "logos",
+ "traqilet-lang",
+]
 
 [[package]]
 name = "unicode-ident"

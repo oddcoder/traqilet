@@ -1,5 +1,5 @@
 use super::{PResult, Parser};
-use crate::lang::lex::Tok;
+use crate::lex::Tok;
 use std::ops::Bound;
 use traqilet_lang::Error;
 use traqilet_lang::Span;

@@ -1,7 +1,6 @@
 mod cli;
 mod diag;
 mod fmt;
-mod lang;
 mod logging;
 
 use crate::diag::Diags;
@@ -26,7 +25,7 @@ fn main() {
 
     let color = cli.color();
     let mut d = Diags::new(&path, &src, color);
-    let parsed = lang::parse::parse(&src);
+    let parsed = traqilet_parser::parse(&src);
 
     for e in &parsed.errors {
         d.error(e);

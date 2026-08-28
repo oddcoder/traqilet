@@ -1,5 +1,5 @@
 use super::{PResult, Parser};
-use crate::lang::lex::Tok;
+use crate::lex::Tok;
 use traqilet_lang::ast::*;
 
 impl Parser {

@@ -10,5 +10,5 @@ aya = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 env_logger = { workspace = true }
 log = { workspace = true }
-logos = { workspace = true }
 traqilet-lang = { workspace = true }
+traqilet-parser = { workspace = true }

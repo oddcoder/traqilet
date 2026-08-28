@@ -9,17 +9,8 @@ ariadne = "0.6"
 aya = "0.14"
 clap = { version = "4.6", features = ["derive"] }
 env_logger = "0.11"
-inkwell = { version = "0.10", default-features = false }
 log = "0.4"
 logos = "0.16"
-
-[features]
-default = [
-    "inkwell/llvm22-1",
-    "inkwell/llvm22-1-force-static",
-    "inkwell/no-libffi-linking",
-    "inkwell/target-bpf",
-]
 
 [profile.release]
 codegen-units = 1

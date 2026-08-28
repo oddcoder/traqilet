@@ -543,11 +543,10 @@ mod tests {
 
     #[test]
     fn tokens_tile_the_whole_source() {
-        let corpus: Vec<String> =
-            std::fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/examples"))
-                .unwrap()
-                .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())
-                .collect();
+        let corpus: Vec<String> = std::fs::read_dir(crate::lang::EXAMPLES_DIR)
+            .unwrap()
+            .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())
+            .collect();
         let tricky = [
             String::new(),
             "   ".to_owned(),

@@ -7,3 +7,6 @@ pub mod span;
 
 pub use error::Error;
 pub use span::{DUMMY_SP, Span};
+
+#[cfg(test)]
+const EXAMPLES_DIR: &str = concat!(env!("CARGO_WORKSPACE_DIR"), "examples");

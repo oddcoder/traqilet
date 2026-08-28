@@ -446,6 +446,35 @@ fn a_type_argument_may_be_arithmetic() {
 }
 
 #[test]
+fn a_bracketed_type_may_carry_a_length() {
+    let items = ok("struct S { a: [u64; 8], b: [u32; B + 5], c: [str(16)] }");
+    let Some(Item::Struct(s)) = items.into_iter().next() else {
+        panic!("expected a struct")
+    };
+    let lengths: Vec<Option<String>> = s
+        .fields
+        .iter()
+        .map(|(_, t)| match &t.ty {
+            Ty::List(_, len) => len.as_ref().map(sexp),
+            other => panic!("expected a bracketed type, got {other:?}"),
+        })
+        .collect();
+    assert_eq!(
+        lengths,
+        [Some("8".to_owned()), Some("(Add B 5)".to_owned()), None]
+    );
+
+    // and what it holds is still a type, however it was written
+    let Ty::List(held, _) = &s.fields[2].1.ty else {
+        panic!("expected a bracketed type")
+    };
+    let Ty::Name(name, args) = &held.ty else {
+        panic!("expected a named type")
+    };
+    assert_eq!((name.name.as_str(), args.len()), ("str", 1));
+}
+
+#[test]
 fn assignment_unpacks_a_tuple() {
     let Statement::Assign { target, op, .. } = stmt("(dev, rw) = origin[rq];") else {
         panic!("expected an assignment")

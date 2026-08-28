@@ -20,14 +20,19 @@ impl Parser {
         })
     }
 
-    /// `[str(128)]`: a growable list, host side only.
+    /// `[str(128)]`, and `[u64; B + 5]`.
     fn list_ty(&mut self) -> PResult<Type> {
         let open = self.span();
         self.bump();
         let inner = self.ty()?;
+        let len = if self.eat(&Tok::Semi) {
+            Some(self.index_expr()?)
+        } else {
+            None
+        };
         self.expect_close(&Tok::RBracket, "`]`", open)?;
         Ok(Type {
-            ty: Ty::List(Box::new(inner)),
+            ty: Ty::List(Box::new(inner), len),
             span: open.to(self.prev_end()),
         })
     }

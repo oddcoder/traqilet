@@ -94,9 +94,8 @@ pub struct Type {
 pub enum Ty {
     /// A name and its arguments: `u64` has none, `str(16)` has one.
     Name(Ident, Vec<TyArg>),
-    /// `[str(128)]` — a growable list, host side only. Bracketed rather than
-    /// named, which is why it is not the case above.
-    List(Box<Type>),
+    /// `[str(128)]` and `[u64; B + 5]`
+    List(Box<Type>, Option<Expr>),
 }
 
 /// An argument to an applied type.

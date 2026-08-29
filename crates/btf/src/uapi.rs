@@ -324,6 +324,56 @@ impl Array {
     }
 }
 
+/// `struct btf_member`: one per `vlen` after a `BTF_KIND_STRUCT` or `_UNION`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Member {
+    pub name_off: u32,
+    pub type_id: TypeId,
+    /// A bit offset, and a bitfield width too when `kind_flag()` is true.
+    pub offset: u32,
+}
+
+impl Member {
+    const BITFIELD_SHIFT: u32 = 24;
+    const BIT_OFFSET_MASK: u32 = 0x00ff_ffff;
+
+    /// # Errors
+    ///
+    /// If the bytes run out part way.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let name_off = reader.read_u32(magic)?;
+        let type_id = TypeId(reader.read_u32(magic)?);
+        let offset = reader.read_u32(magic)?;
+
+        Ok(Self {
+            name_off,
+            type_id,
+            offset,
+        })
+    }
+
+    /// Where the member starts. Only the low bits when the struct's kind flag is
+    /// set; without it the whole word is the offset.
+    #[must_use]
+    pub fn bit_offset(&self, kind_flag: bool) -> u32 {
+        if kind_flag {
+            self.offset & Self::BIT_OFFSET_MASK
+        } else {
+            self.offset
+        }
+    }
+
+    /// How wide a bitfield member is, and `None` for a member that is not one.
+    ///
+    /// Always `None` without the struct's kind flag, which is the older encoding
+    /// that leaves the width to the member's own [`Int`] instead.
+    #[must_use]
+    pub fn bitfield_size(&self, kind_flag: bool) -> Option<u32> {
+        Some(self.offset >> Self::BITFIELD_SHIFT).filter(|width| kind_flag && *width > 0)
+    }
+}
+
 /// `struct btf_enum`: one per `vlen` after a `BTF_KIND_ENUM`.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]

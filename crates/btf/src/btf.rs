@@ -133,6 +133,12 @@ impl Btf {
         self.by_name.entry(name).or_default().push(id);
     }
 
+    /// The type an id stands for, and `None` for an id past the last entry.
+    #[must_use]
+    pub fn get(&self, id: TypeId) -> Option<&Type> {
+        self.types.get(id.0 as usize)
+    }
+
     /// Every id carrying this name, in the order the section declares them.
     #[must_use]
     pub fn find_all(&self, name: &str) -> &[TypeId] {

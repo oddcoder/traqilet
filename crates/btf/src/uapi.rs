@@ -520,3 +520,29 @@ impl TryFrom<u32> for FuncLinkage {
     }
 }
 
+/// `struct btf_var_secinfo`: one per `vlen` after a `BTF_KIND_DATASEC`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct VarSecInfo {
+    pub type_id: TypeId,
+    pub offset: u32,
+    pub size: u32,
+}
+
+impl VarSecInfo {
+    /// # Errors
+    ///
+    /// If the bytes run out part way.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let type_id = TypeId(reader.read_u32(magic)?);
+        let offset = reader.read_u32(magic)?;
+        let size = reader.read_u32(magic)?;
+
+        Ok(Self {
+            type_id,
+            offset,
+            size,
+        })
+    }
+}
+

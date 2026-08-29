@@ -8,6 +8,7 @@ use clap::Parser;
 use cli::Cli;
 use log::{debug, error, info};
 use std::{fs::read_to_string, process::exit};
+use traqilet_btf::Btf;
 
 fn main() {
     let cli = Cli::parse();
@@ -39,6 +40,18 @@ fn main() {
         d.plain("nothing to run: the script declares no items");
         exit(-1);
     }
+    let res = if let Some(path) = cli.btf.as_deref() {
+        Btf::from_file(path)
+    } else {
+        Btf::from_live_kernel()
+    };
+    let _types = match res {
+        Ok(types) => types,
+        Err(e) => {
+            error!("Failed to load BTF: {e}");
+            exit(-1);
+        }
+    };
 
     info!("{path} parsed, {} item(s)", parsed.script.items.len());
 }

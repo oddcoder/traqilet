@@ -18,6 +18,10 @@ pub struct Cli {
     #[arg(long, value_enum, default_value_t = Color::Auto, value_name = "WHEN")]
     pub color: Color,
 
+    /// kernel type information to check against
+    #[arg(long, value_name = "PATH")]
+    pub btf: Option<PathBuf>,
+
     /// log line template, Rust format syntax. Fields {time} {mono} {delta}
     /// {level} {src} {msg}, each accepting a spec such as {mono:>12.6}; {{ and
     /// }} are literal braces, so a JSON line is

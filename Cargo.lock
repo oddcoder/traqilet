@@ -545,6 +545,7 @@ dependencies = [
  "clap",
  "env_logger",
  "log",
+ "traqilet-btf",
  "traqilet-lang",
  "traqilet-parser",
 ]

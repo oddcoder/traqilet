@@ -225,3 +225,64 @@ impl Type {
         self.info >> 31 == 1
     }
 }
+
+/// The `u32` that follows a `BTF_KIND_INT`.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy)]
+pub struct Int(pub u32);
+
+impl Int {
+    const ENCODING_SHIFT: u32 = 24;
+    const ENCODING_MASK: u32 = 0x0f;
+    const OFFSET_SHIFT: u32 = 16;
+    const OFFSET_MASK: u32 = 0xff;
+    const BITS_MASK: u32 = 0xff;
+    const SIGNED: u32 = 1 << 0;
+    const CHAR: u32 = 1 << 1;
+    const BOOL: u32 = 1 << 2;
+
+    /// Reads the encoding word.
+    ///
+    /// # Errors
+    ///
+    /// If the bytes run out.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        Ok(Self(reader.read_u32(magic)?))
+    }
+
+    /// How wide the integer actually is, which a bitfield makes smaller than the
+    /// type's size.
+    #[must_use]
+    pub fn bits(&self) -> u32 {
+        self.0 & Self::BITS_MASK
+    }
+
+    /// Where the bits start, for the bitfields the compiler describes this way
+    /// rather than through a member offset.
+    #[must_use]
+    pub fn offset(&self) -> u32 {
+        (self.0 >> Self::OFFSET_SHIFT) & Self::OFFSET_MASK
+    }
+
+    /// Signed, as opposed to plainly unsigned.
+    #[must_use]
+    pub fn is_signed(&self) -> bool {
+        self.encoding() & Self::SIGNED != 0
+    }
+
+    /// Meant to be printed as a character.
+    #[must_use]
+    pub fn is_char(&self) -> bool {
+        self.encoding() & Self::CHAR != 0
+    }
+
+    /// Meant to be read as a boolean.
+    #[must_use]
+    pub fn is_bool(&self) -> bool {
+        self.encoding() & Self::BOOL != 0
+    }
+
+    fn encoding(self) -> u32 {
+        (self.0 >> Self::ENCODING_SHIFT) & Self::ENCODING_MASK
+    }
+}

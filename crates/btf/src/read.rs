@@ -28,6 +28,7 @@ pub(crate) trait ReadExt: Read {
     }
 
     ints! {
+        read_u16 -> u16,
         read_u32 -> u32,
     }
 }

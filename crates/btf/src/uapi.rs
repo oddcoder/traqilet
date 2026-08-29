@@ -81,6 +81,32 @@ impl Header {
     }
 }
 
+/// `struct btf_layout`
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Layout {
+    pub info_sz: u8,
+    pub elem_sz: u8,
+    pub flags: u16,
+}
+
+impl Layout {
+    /// # Errors
+    ///
+    /// If the bytes run out part way.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let info_sz = reader.read_u8()?;
+        let elem_sz = reader.read_u8()?;
+        let flags = reader.read_u16(magic)?;
+
+        Ok(Self {
+            info_sz,
+            elem_sz,
+            flags,
+        })
+    }
+}
+
 /// `BTF_KIND_*`: what an entry in the type section describes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

@@ -426,6 +426,26 @@ impl Enum64 {
     }
 }
 
+/// `struct btf_param`: one per `vlen` after a `BTF_KIND_FUNC_PROTO`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Param {
+    pub name_off: u32,
+    pub type_id: TypeId,
+}
+
+impl Param {
+    /// # Errors
+    ///
+    /// If the bytes run out part way.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let name_off = reader.read_u32(magic)?;
+        let type_id = TypeId(reader.read_u32(magic)?);
+
+        Ok(Self { name_off, type_id })
+    }
+}
+
 /// `struct btf_var`: the one record following a `BTF_KIND_VAR`.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]

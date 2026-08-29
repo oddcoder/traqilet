@@ -35,6 +35,7 @@ impl HeaderMagic {
 }
 
 #[repr(C)]
+#[derive(Debug, Clone, Copy)]
 pub struct Header {
     pub magic: HeaderMagic,
     pub version: u8,
@@ -392,6 +393,19 @@ impl Enum {
 
         Ok(Self { name_off, val })
     }
+
+    /// The value as a signed enum means it.
+    #[must_use]
+    pub fn signed(&self) -> i32 {
+        self.val
+    }
+
+    /// The same bits as an unsigned enum means them, so 0xffffffff is four
+    /// billion rather than minus one.
+    #[must_use]
+    pub fn unsigned(&self) -> u32 {
+        self.val.cast_unsigned()
+    }
 }
 
 /// `struct btf_enum64`: one per `vlen` after a `BTF_KIND_ENUM64`.
@@ -419,10 +433,17 @@ impl Enum64 {
         })
     }
 
-    /// The two halves as the one value they stand for.
+    /// The two halves as the one value they stand for, as an unsigned enum means
+    /// it.
     #[must_use]
-    pub fn val(&self) -> u64 {
+    pub fn unsigned(&self) -> u64 {
         u64::from(self.val_lo32) | (u64::from(self.val_hi32) << 32)
+    }
+
+    /// The same bits as a signed enum means them.
+    #[must_use]
+    pub fn signed(&self) -> i64 {
+        self.unsigned().cast_signed()
     }
 }
 

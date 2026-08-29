@@ -107,6 +107,16 @@ impl Layout {
     }
 }
 
+/// A type id: which entry in the type section.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TypeId(pub u32);
+
+impl TypeId {
+    /// The void that no entry describes.
+    pub const VOID: Self = Self(0);
+}
+
 /// `BTF_KIND_*`: what an entry in the type section describes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
@@ -284,6 +294,33 @@ impl Int {
 
     fn encoding(self) -> u32 {
         (self.0 >> Self::ENCODING_SHIFT) & Self::ENCODING_MASK
+    }
+}
+
+/// `struct btf_array`: the one record following a `BTF_KIND_ARRAY`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Array {
+    pub elem_type_id: TypeId,
+    pub index_type_id: TypeId,
+    /// Zero for the flexible array member a struct can end with.
+    pub nelems: u32,
+}
+
+impl Array {
+    /// # Errors
+    ///
+    /// If the bytes run out part way.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let elem_type_id = TypeId(reader.read_u32(magic)?);
+        let index_type_id = TypeId(reader.read_u32(magic)?);
+        let nelems = reader.read_u32(magic)?;
+
+        Ok(Self {
+            elem_type_id,
+            index_type_id,
+            nelems,
+        })
     }
 }
 

@@ -286,3 +286,56 @@ impl Int {
         (self.0 >> Self::ENCODING_SHIFT) & Self::ENCODING_MASK
     }
 }
+
+/// `struct btf_enum`: one per `vlen` after a `BTF_KIND_ENUM`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Enum {
+    pub name_off: u32,
+    pub val: i32,
+}
+
+impl Enum {
+    /// # Errors
+    ///
+    /// If the bytes run out part way.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let name_off = reader.read_u32(magic)?;
+        let val = reader.read_i32(magic)?;
+
+        Ok(Self { name_off, val })
+    }
+}
+
+/// `struct btf_enum64`: one per `vlen` after a `BTF_KIND_ENUM64`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Enum64 {
+    pub name_off: u32,
+    pub val_lo32: u32,
+    pub val_hi32: u32,
+}
+
+impl Enum64 {
+    /// # Errors
+    ///
+    /// If the bytes run out part way.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let name_off = reader.read_u32(magic)?;
+        let val_lo32 = reader.read_u32(magic)?;
+        let val_hi32 = reader.read_u32(magic)?;
+
+        Ok(Self {
+            name_off,
+            val_lo32,
+            val_hi32,
+        })
+    }
+
+    /// The two halves as the one value they stand for.
+    #[must_use]
+    pub fn val(&self) -> u64 {
+        u64::from(self.val_lo32) | (u64::from(self.val_hi32) << 32)
+    }
+}
+

@@ -482,12 +482,10 @@ impl TryFrom<u32> for VarLinkage {
             0 => Ok(Self::Static),
             1 => Ok(Self::GlobalAllocated),
             2 => Ok(Self::GlobalExtern),
-            other => {
-                Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("unknown BTF variable linkage {other}"),
-                ))
-            }
+            other => Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("unknown BTF variable linkage {other}"),
+            )),
         }
     }
 }

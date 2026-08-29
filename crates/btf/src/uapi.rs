@@ -426,3 +426,77 @@ impl Enum64 {
     }
 }
 
+/// `struct btf_var`: the one record following a `BTF_KIND_VAR`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Var {
+    pub linkage: VarLinkage,
+}
+
+impl Var {
+    /// # Errors
+    ///
+    /// If the bytes run out, or the linkage is one this build does not know.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        let linkage_raw = reader.read_u32(magic)?;
+        let linkage = VarLinkage::try_from(linkage_raw)?;
+
+        Ok(Self { linkage })
+    }
+}
+
+/// `BTF_VAR_*`: how far a variable is visible.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum VarLinkage {
+    Static = 0,
+    GlobalAllocated = 1,
+    GlobalExtern = 2,
+}
+
+impl TryFrom<u32> for VarLinkage {
+    type Error = Error;
+
+    fn try_from(bits: u32) -> Result<Self> {
+        match bits {
+            0 => Ok(Self::Static),
+            1 => Ok(Self::GlobalAllocated),
+            2 => Ok(Self::GlobalExtern),
+            other => {
+                Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("unknown BTF variable linkage {other}"),
+                ))
+            }
+        }
+    }
+}
+
+/// `enum btf_func_linkage`, which a `BTF_KIND_FUNC` keeps in `vlen` rather than
+/// in a record of its own.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum FuncLinkage {
+    Static = 0,
+    Global = 1,
+    Extern = 2,
+}
+
+impl TryFrom<u32> for FuncLinkage {
+    type Error = Error;
+
+    fn try_from(bits: u32) -> Result<Self> {
+        Ok(match bits {
+            0 => Self::Static,
+            1 => Self::Global,
+            2 => Self::Extern,
+            other => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("unknown BTF function linkage {other}"),
+                ));
+            }
+        })
+    }
+}
+

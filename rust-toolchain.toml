@@ -1,0 +1,4 @@
+# Cranelift's mainline wants this, and mainline is what a backend has to be written
+# against.
+[toolchain]
+channel = "1.98"

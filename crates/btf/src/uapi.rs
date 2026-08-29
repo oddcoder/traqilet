@@ -546,3 +546,21 @@ impl VarSecInfo {
     }
 }
 
+/// `struct btf_decl_tag`: the one record following a `BTF_KIND_DECL_TAG`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct DeclTag {
+    /// todo: figure out what is this thing ... but lets parse it eitherways
+    pub component_idx: i32,
+}
+
+impl DeclTag {
+    /// # Errors
+    ///
+    /// If the bytes run out.
+    pub fn read<R: Read>(mut reader: R, magic: HeaderMagic) -> Result<Self> {
+        Ok(Self {
+            component_idx: reader.read_i32(magic)?,
+        })
+    }
+}

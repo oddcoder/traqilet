@@ -15,9 +15,11 @@ cast_possible_truncation = "allow"
 ariadne = "0.6"
 aya = "0.14"
 clap = "4.6"
+cranelift-codegen = "0.124.3"
 env_logger = "0.11"
 log = "0.4"
 logos = "0.16"
+traqilet-bpf = { path = "crates/bpf" }
 traqilet-btf = { path = "crates/btf" }
 traqilet-lang = { path = "crates/lang" }
 traqilet-parser = { path = "crates/parser" }

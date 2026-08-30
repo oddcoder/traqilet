@@ -51,15 +51,31 @@ fn patch(root: &Path) {
     run("git", &["init".as_ref(), "-q".as_ref()], &out);
     run(
         "git",
-        &["remote".as_ref(), "add".as_ref(), "origin".as_ref(), REPO.as_ref()],
+        &[
+            "remote".as_ref(),
+            "add".as_ref(),
+            "origin".as_ref(),
+            REPO.as_ref(),
+        ],
         &out,
     );
     run(
         "git",
-        &["fetch".as_ref(), "-q".as_ref(), "--depth".as_ref(), "1".as_ref(), "origin".as_ref(), REV.as_ref()],
+        &[
+            "fetch".as_ref(),
+            "-q".as_ref(),
+            "--depth".as_ref(),
+            "1".as_ref(),
+            "origin".as_ref(),
+            REV.as_ref(),
+        ],
         &out,
     );
-    run("git", &["checkout".as_ref(), "-q".as_ref(), "FETCH_HEAD".as_ref()], &out);
+    run(
+        "git",
+        &["checkout".as_ref(), "-q".as_ref(), "FETCH_HEAD".as_ref()],
+        &out,
+    );
     run(
         "git",
         &[

@@ -12,11 +12,16 @@ use traqilet_btf::Btf;
 
 fn main() {
     let cli = Cli::parse();
+    if cli.licenses {
+        print!("{}", cli::LICENSES);
+        return;
+    }
     logging::init(&cli);
     debug!("Starting traqilet");
 
-    let path = cli.script.display().to_string();
-    let src = match read_to_string(&cli.script) {
+    let script = cli.script.as_deref().expect("required unless --licenses");
+    let path = script.display().to_string();
+    let src = match read_to_string(script) {
         Ok(src) => src,
         Err(e) => {
             error!("Failed to read {path}: {e}");

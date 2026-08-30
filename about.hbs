@@ -1,0 +1,36 @@
+Third-party notices for traqilet.
+
+The crates below are linked into traqilet and used under the licences shown. A licence
+appears once per distinct text, since MIT and its kin carry their copyright line inside
+the licence itself and one crate's is not another's.
+
+This file is generated, not written. Regenerate it whenever a dependency changes:
+
+    cargo install cargo-about --features cli   # once; the binary needs that feature
+    cargo xtask build                          # cranelift has to be on disk to resolve
+    cargo about generate about.hbs | fold -s -w 100 | sed 's/[[:space:]]*$//' >THIRD-PARTY.txt
+
+The fold is there because a few crates ship their licence as one line per paragraph, one
+of them 952 characters wide. It only splits lines already past the width, so text that
+came wrapped stays as its author wrapped it.
+
+Which licences are acceptable, and which one is elected where a crate offers a choice,
+is set in about.toml. The shape of this file is set in about.hbs. Edit those, not this.
+
+{{#each overview}}
+  {{id}} -- {{count}} crate(s)
+{{/each}}
+
+{{#each licenses}}
+================================================================================
+ {{id}}
+================================================================================
+
+Applies to:
+{{#each used_by}}
+  {{crate.name}} {{crate.version}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}

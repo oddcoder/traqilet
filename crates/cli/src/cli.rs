@@ -8,7 +8,8 @@ use std::{io::IsTerminal, path::PathBuf};
 #[command(version, about = "compile tracing scripts to bpf and run them")]
 pub struct Cli {
     /// script file to run
-    pub script: PathBuf,
+    #[arg(required_unless_present = "licenses")]
+    pub script: Option<PathBuf>,
 
     /// increase verbosity: -v script debug, -vv internals, -vvv dependencies, -vvvv trace
     #[arg(short, long, action = ArgAction::Count)]
@@ -28,7 +29,16 @@ pub struct Cli {
     /// --log-format '{{"ts":"{time}","level":"{level}","msg":"{msg}"}}'
     #[arg(long, value_name = "TEMPLATE")]
     pub log_format: Option<String>,
+
+    /// print the licences of the crates traqilet is built from, and exit
+    #[arg(long)]
+    pub licenses: bool,
 }
+
+pub const LICENSES: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../THIRD-PARTY.txt"
+));
 
 impl Cli {
     /// Whether to emit styles.

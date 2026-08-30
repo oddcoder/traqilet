@@ -1,0 +1,27 @@
+# to be used with: `cargo deny check`
+[graph]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+
+[licenses]
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+]
+exceptions = [
+    { crate = "foldhash", allow = ["Zlib"] },
+    { crate = "unicode-ident", allow = ["Unicode-3.0"] },
+]
+unused-allowed-license = "deny"
+unused-license-exception = "deny"
+# A new license arriving through a test-only dependency should break here, rather than
+# on the day that dependency graduates into a real one.
+include-dev = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow" # this is for {workspace = true} dependencies
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

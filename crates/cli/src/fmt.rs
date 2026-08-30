@@ -256,7 +256,7 @@ mod tests {
             format!("{:.4}", "traqilet")
         );
         assert_eq!(p("8").render(Val::Str("ab")), format!("{:8}", "ab"));
-        assert_eq!(p("").render(Val::Str("abc")), format!("{}", "abc"));
+        assert_eq!(p("").render(Val::Str("abc")), "abc".to_owned());
         assert_eq!(
             p(">12.6").render(Val::Num(0.0034)),
             format!("{:>12.6}", 0.0034)

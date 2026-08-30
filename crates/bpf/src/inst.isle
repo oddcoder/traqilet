@@ -1,0 +1,9 @@
+;; eBPF machine instructions.
+
+(type MInst
+    (enum
+        ;; `dst = src`
+        (Mov
+            (rd WritableReg)
+            (rm Reg)
+        )))

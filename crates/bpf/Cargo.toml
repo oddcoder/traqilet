@@ -3,9 +3,15 @@ name = "traqilet-cranelift-bpf"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+build = "build.rs"
 
 [lints]
 workspace = true
 
 [dependencies]
 cranelift-codegen = { workspace = true }
+regalloc2 = { workspace = true }
+
+[build-dependencies]
+cranelift-codegen-meta = { workspace = true }
+cranelift-isle = { workspace = true, features = ["fancy-errors"] }

@@ -16,6 +16,7 @@ runs:
       with:
         path: .patched
         key: patched-${{ hashFiles('xtask/src/main.rs', 'patches/**') }}
+        restore-keys: patched-
 
     - if: steps.cranelift.outputs.cache-hit != 'true'
       shell: bash

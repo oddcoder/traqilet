@@ -1,0 +1,35 @@
+name: notice
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  notice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about
+      - name: Regenerate
+        run: |
+          cargo about generate about.hbs \
+            | fold -s -w 100 \
+            | sed 's/[[:space:]]*$//' >THIRD-PARTY.txt
+      - name: THIRD-PARTY.txt is current
+        run: |
+          git diff --exit-code --stat THIRD-PARTY.txt || {
+            echo "::error file=THIRD-PARTY.txt::stale; regenerate it, see its own header"
+            exit 1
+          }

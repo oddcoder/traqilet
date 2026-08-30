@@ -2,3 +2,4 @@
 # against.
 [toolchain]
 channel = "1.98"
+components = ["clippy", "rustfmt"]

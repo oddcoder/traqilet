@@ -1,0 +1,22 @@
+name: setup
+description: The pinned toolchain, a warm cargo cache, and the patched cranelift checkout.
+
+runs:
+  using: composite
+  steps:
+    - uses: Swatinem/rust-cache@v2
+      with:
+        # xtask is its own workspace, with its own lockfile and target dir to cache.
+        workspaces: |
+          .
+          xtask
+
+    - id: cranelift
+      uses: actions/cache@v4
+      with:
+        path: .patched
+        key: patched-${{ hashFiles('xtask/src/main.rs', 'patches/**') }}
+
+    - if: steps.cranelift.outputs.cache-hit != 'true'
+      shell: bash
+      run: cargo xtask build

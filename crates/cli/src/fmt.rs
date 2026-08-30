@@ -79,12 +79,12 @@ impl Spec {
             i = 1;
         }
 
-        if let Some(&ch) = c.get(i) {
-            if matches!(ch, '+' | '-' | '#' | '0') {
-                return Err(format!(
-                    "`{s}`: sign, `#` and zero padding are not implemented"
-                ));
-            }
+        if let Some(&ch) = c.get(i)
+            && matches!(ch, '+' | '-' | '#' | '0')
+        {
+            return Err(format!(
+                "`{s}`: sign, `#` and zero padding are not implemented"
+            ));
         }
 
         let start = i;

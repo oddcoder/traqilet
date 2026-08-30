@@ -4,7 +4,6 @@ use traqilet_btf::{
     uapi::{TypeId, VarLinkage},
 };
 
-/// The BTF of an Ubuntu 26.04 amd64 kernel; see `blobs/README.md`.
 const KERNEL_BTF: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../blobs/ubuntu-26.04-amd64.btf"

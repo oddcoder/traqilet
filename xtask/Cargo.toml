@@ -1,5 +1,5 @@
 # Its own workspace on purpose: the workspace beside it cannot be resolved until this
-# has run, because `[patch.crates-io]` there names a directory this creates.
+# has run, because its `cranelift-codegen` path dependency names a directory this creates.
 [workspace]
 
 [package]

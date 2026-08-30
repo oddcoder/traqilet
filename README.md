@@ -113,9 +113,9 @@ repository's `xtask`:
 $ cargo xtask build
 ```
 
-The first build fetches a pinned Wasmtime revision into `.patched/`, applies
-[`patches/machinst-pub.patch`](patches/machinst-pub.patch), and then builds the
-workspace. After that, ordinary Cargo commands work:
+The first build fetches a pinned Wasmtime revision into `.patched/`, applies the
+patch series in [`patches/`](patches), and then builds the workspace. After that,
+ordinary Cargo commands work:
 
 ```console
 $ cargo test --workspace --locked

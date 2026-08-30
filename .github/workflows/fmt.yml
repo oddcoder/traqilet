@@ -1,0 +1,24 @@
+name: fmt
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # rustfmt does not resolve the dependency graph, so this one needs neither the
+  # cranelift checkout nor a build.
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo fmt --all --check
+      - run: cargo fmt --manifest-path xtask/Cargo.toml --check

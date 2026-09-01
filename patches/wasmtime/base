@@ -1,0 +1,4 @@
+# The upstream this series is built on. `cargo xtask build` fetches this commit and
+# applies the .patch files beside it, in file name order.
+repo = https://github.com/bytecodealliance/wasmtime
+rev = d8a0da6d661605713798c1c9c76be5c28e3159ff

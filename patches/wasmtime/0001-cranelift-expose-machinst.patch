@@ -1,4 +1,4 @@
-From 05c0c365e0361415525cc1be7983059068f9d7c4 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 Date: Sun, 30 Aug 2026 18:54:43 +0000
 Subject: [PATCH] cranelift: expose machinst

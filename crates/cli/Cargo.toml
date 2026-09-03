@@ -11,6 +11,8 @@ workspace = true
 ariadne = { workspace = true }
 aya = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+cranelift-codegen = { workspace = true }
+cranelift-frontend = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
 traqilet-btf = { workspace = true }

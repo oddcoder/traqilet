@@ -18,15 +18,10 @@ ariadne = "0.6"
 aya = "0.14"
 clap = "4.6"
 cranelift-codegen = { path = ".patched/wasmtime/cranelift/codegen" }
-cranelift-codegen-meta = { path = ".patched/wasmtime/cranelift/codegen/meta" }
-cranelift-isle = { path = ".patched/wasmtime/cranelift/isle/isle" }
+cranelift-frontend = { path = ".patched/wasmtime/cranelift/frontend" }
 env_logger = "0.11"
 log = "0.4"
 logos = "0.16"
-# Must match the version cranelift-codegen resolves, since `PReg` crosses the
-# ISLE-generated `Context` trait boundary.
-regalloc2 = "0.15.2"
-traqilet-bpf = { path = "crates/bpf" }
 traqilet-btf = { path = "crates/btf" }
 traqilet-lang = { path = "crates/lang" }
 traqilet-parser = { path = "crates/parser" }

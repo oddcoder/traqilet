@@ -1,0 +1,255 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Thu, 3 Sep 2026 15:17:19 +0000
+Subject: [PATCH] cranelift: scaffold an eBPF backend
+
+Register a new ISA and add the necessary boilerplate for isle files to
+compile.  ISA is gated behind a cargo feature.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/Cargo.toml                      |  3 ++-
+ cranelift/codegen/meta/src/isa/bpf.rs             |  6 ++++++
+ cranelift/codegen/meta/src/isa/mod.rs             |  6 ++++++
+ cranelift/codegen/meta/src/isle.rs                | 13 +++++++++++++
+ cranelift/codegen/src/isa/bpf/inst.isle           |  3 +++
+ cranelift/codegen/src/isa/bpf/lower.isle          |  1 +
+ cranelift/codegen/src/isa/bpf/lower.rs            |  4 ++++
+ cranelift/codegen/src/isa/bpf/lower/isle.rs       | 15 +++++++++++++++
+ .../src/isa/bpf/lower/isle/generated_code.rs      | 11 +++++++++++
+ cranelift/codegen/src/isa/bpf/mod.rs              |  4 ++++
+ cranelift/codegen/src/isa/bpf/settings.rs         | 13 +++++++++++++
+ cranelift/codegen/src/isa/mod.rs                  |  3 +++
+ 12 files changed, 81 insertions(+), 1 deletion(-)
+ create mode 100644 cranelift/codegen/meta/src/isa/bpf.rs
+ create mode 100644 cranelift/codegen/src/isa/bpf/inst.isle
+ create mode 100644 cranelift/codegen/src/isa/bpf/lower.isle
+ create mode 100644 cranelift/codegen/src/isa/bpf/lower.rs
+ create mode 100644 cranelift/codegen/src/isa/bpf/lower/isle.rs
+ create mode 100644 cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
+ create mode 100644 cranelift/codegen/src/isa/bpf/mod.rs
+ create mode 100644 cranelift/codegen/src/isa/bpf/settings.rs
+
+diff --git a/cranelift/codegen/Cargo.toml b/cranelift/codegen/Cargo.toml
+index 67193fc..2956c76 100644
+--- a/cranelift/codegen/Cargo.toml
++++ b/cranelift/codegen/Cargo.toml
+@@ -95,6 +95,7 @@ x86 = []
+ arm64 = []
+ s390x = []
+ riscv64 = []
++bpf = []
+ pulley = [
+     "dep:pulley-interpreter",
+     "pulley-interpreter/encode",
+@@ -105,7 +106,7 @@ pulley = [
+ host-arch = []
+ 
+ # Option to enable all architectures.
+-all-arch = ["all-native-arch", "pulley"]
++all-arch = ["all-native-arch", "pulley", "bpf"]
+ 
+ # Option to enable all architectures that correspond to an actual native target
+ # (that is, exclude Pulley).
+diff --git a/cranelift/codegen/meta/src/isa/bpf.rs b/cranelift/codegen/meta/src/isa/bpf.rs
+new file mode 100644
+index 0000000..4c1eeb2
+--- /dev/null
++++ b/cranelift/codegen/meta/src/isa/bpf.rs
+@@ -0,0 +1,6 @@
++use crate::cdsl::{isa::TargetIsa, settings::SettingGroupBuilder};
++
++pub(crate) fn define() -> TargetIsa {
++    let settings = SettingGroupBuilder::new("bpf");
++    TargetIsa::new("bpf", settings.build())
++}
+diff --git a/cranelift/codegen/meta/src/isa/mod.rs b/cranelift/codegen/meta/src/isa/mod.rs
+index 655b14a..17c1c90 100644
+--- a/cranelift/codegen/meta/src/isa/mod.rs
++++ b/cranelift/codegen/meta/src/isa/mod.rs
+@@ -3,6 +3,7 @@ use crate::cdsl::isa::TargetIsa;
+ use std::fmt;
+ 
+ mod arm64;
++mod bpf;
+ mod pulley;
+ mod riscv64;
+ mod s390x;
+@@ -17,6 +18,7 @@ pub enum Isa {
+     Riscv64,
+     Pulley32,
+     Pulley64,
++    Bpf,
+ }
+ 
+ impl Isa {
+@@ -37,6 +39,7 @@ impl Isa {
+             "riscv64" | "riscv64gc" | "riscv64imac" => Some(Isa::Riscv64),
+             "pulley32" => Some(Isa::Pulley32),
+             "pulley64" => Some(Isa::Pulley64),
++            "bpf" | "bpfeb" | "bpfel" => Some(Isa::Bpf),
+             _ => None,
+         }
+     }
+@@ -50,6 +53,7 @@ impl Isa {
+             Isa::Riscv64,
+             Isa::Pulley32,
+             Isa::Pulley64,
++            Isa::Bpf,
+         ]
+     }
+ }
+@@ -64,6 +68,7 @@ impl fmt::Display for Isa {
+             Isa::Riscv64 => write!(f, "riscv64"),
+             Isa::Pulley32 => write!(f, "pulley32"),
+             Isa::Pulley64 => write!(f, "pulley64"),
++            Isa::Bpf => write!(f, "bpf"),
+         }
+     }
+ }
+@@ -76,6 +81,7 @@ pub(crate) fn define(isas: &[Isa]) -> Vec<TargetIsa> {
+             Isa::S390x => s390x::define(),
+             Isa::Riscv64 => riscv64::define(),
+             Isa::Pulley32 | Isa::Pulley64 => pulley::define(),
++            Isa::Bpf => bpf::define(),
+         })
+         .collect()
+ }
+diff --git a/cranelift/codegen/meta/src/isle.rs b/cranelift/codegen/meta/src/isle.rs
+index 6f39a34..c3b4e7e 100644
+--- a/cranelift/codegen/meta/src/isle.rs
++++ b/cranelift/codegen/meta/src/isle.rs
+@@ -152,6 +152,7 @@ pub fn get_isle_compilations(
+         .join("src")
+         .join("isa")
+         .join("pulley_shared");
++    let src_isa_bpf = codegen_crate_dir.join("src").join("isa").join("bpf");
+ 
+     // This is a set of ISLE compilation units.
+     //
+@@ -285,6 +286,18 @@ pub fn get_isle_compilations(
+                     clif_lower_isle.clone(),
+                 ],
+             },
++            // The eBPF instruction selector.
++            IsleCompilation {
++                name: "bpf".to_string(),
++                output: gen_dir.join("isle_bpf.rs"),
++                tracked_inputs: vec![
++                    prelude_isle.clone(),
++                    prelude_lower_isle.clone(),
++                    src_isa_bpf.join("inst.isle"),
++                    src_isa_bpf.join("lower.isle"),
++                ],
++                untracked_inputs: vec![numerics_isle.clone(), clif_lower_isle.clone()],
++            },
+         ],
+     }
+ }
+diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
+new file mode 100644
+index 0000000..8e1c1a6
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/inst.isle
+@@ -0,0 +1,3 @@
++;; eBPF machine instructions.
++
++(type MInst (enum ))
+diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
+new file mode 100644
+index 0000000..8d0db48
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/lower.isle
+@@ -0,0 +1 @@
++;; eBPF instruction selection: CLIF-to-MachInst lowering.
+diff --git a/cranelift/codegen/src/isa/bpf/lower.rs b/cranelift/codegen/src/isa/bpf/lower.rs
+new file mode 100644
+index 0000000..836879b
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/lower.rs
+@@ -0,0 +1,4 @@
++//! Lowering rules for eBPF.
++
++// ISLE integration glue.
++pub(super) mod isle;
+diff --git a/cranelift/codegen/src/isa/bpf/lower/isle.rs b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+new file mode 100644
+index 0000000..9722883
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+@@ -0,0 +1,15 @@
++//! ISLE integration glue code for eBPF lowering.
++
++// Pull in the ISLE generated code.
++pub mod generated_code;
++
++// Types that the generated ISLE code uses via `use super::*`.
++use crate::ir::condcodes::*;
++use crate::ir::immediates::*;
++use crate::ir::*;
++use crate::machinst::isle::*;
++use crate::machinst::{CallArgList, CallRetList, InstOutput, MachLabel, Reg, VCodeConstant};
++use alloc::boxed::Box;
++use regalloc2::PReg;
++
++type BoxExternalName = Box<ExternalName>;
+diff --git a/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs b/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
+new file mode 100644
+index 0000000..92f444c
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
+@@ -0,0 +1,11 @@
++#![expect(
++    dead_code,
++    unreachable_code,
++    unreachable_patterns,
++    unused_imports,
++    unused_variables,
++    clippy::all,
++    reason = "generated code"
++)]
++
++include!(concat!(env!("ISLE_DIR"), "/isle_bpf.rs"));
+diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
+new file mode 100644
+index 0000000..5cf2d9e
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/mod.rs
+@@ -0,0 +1,4 @@
++//! eBPF Instruction Set Architecture.
++
++mod lower;
++pub mod settings;
+diff --git a/cranelift/codegen/src/isa/bpf/settings.rs b/cranelift/codegen/src/isa/bpf/settings.rs
+new file mode 100644
+index 0000000..a810921
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/settings.rs
+@@ -0,0 +1,13 @@
++//! eBPF settings.
++
++#![allow(dead_code, reason = "the generated settings include some dead code")]
++
++use crate::{
++    machinst::IsaFlags,
++    settings::{self, Builder, Value, detail},
++};
++use core::fmt;
++
++include!(concat!(env!("OUT_DIR"), "/settings-bpf.rs"));
++
++impl IsaFlags for Flags {}
+diff --git a/cranelift/codegen/src/isa/mod.rs b/cranelift/codegen/src/isa/mod.rs
+index 5f33e63..525dae8 100644
+--- a/cranelift/codegen/src/isa/mod.rs
++++ b/cranelift/codegen/src/isa/mod.rs
+@@ -83,6 +83,9 @@ mod pulley64;
+ #[cfg(feature = "pulley")]
+ mod pulley_shared;
+ 
++#[cfg(feature = "bpf")]
++pub mod bpf;
++
+ pub mod unwind;
+ 
+ mod call_conv;

@@ -79,7 +79,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8454c8a44ce2cb9cc7e7fae67fc6128465b343b92c6631e94beca3c8d1524ea5"
 dependencies = [
- "unicode-width 0.2.2",
+ "unicode-width",
  "yansi",
 ]
 
@@ -193,16 +193,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
-name = "codespan-reporting"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3538270d33cc669650c4b093848450d380def10c331d38c768e34cac80576e6e"
-dependencies = [
- "termcolor",
- "unicode-width 0.1.14",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -292,11 +282,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "cranelift-isle"
+name = "cranelift-frontend"
 version = "0.136.0-dev"
 dependencies = [
- "codespan-reporting",
+ "cranelift-codegen",
+ "hashbrown 0.17.1",
+ "log",
+ "smallvec",
+ "target-lexicon",
 ]
+
+[[package]]
+name = "cranelift-isle"
+version = "0.136.0-dev"
 
 [[package]]
 name = "cranelift-srcgen"
@@ -713,15 +711,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 
 [[package]]
-name = "termcolor"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
-dependencies = [
- "winapi-util",
-]
-
-[[package]]
 name = "thiserror"
 version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -748,6 +737,8 @@ dependencies = [
  "ariadne",
  "aya",
  "clap",
+ "cranelift-codegen",
+ "cranelift-frontend",
  "env_logger",
  "log",
  "traqilet-btf",
@@ -758,16 +749,6 @@ dependencies = [
 [[package]]
 name = "traqilet-btf"
 version = "0.1.0"
-
-[[package]]
-name = "traqilet-cranelift-bpf"
-version = "0.1.0"
-dependencies = [
- "cranelift-codegen",
- "cranelift-codegen-meta",
- "cranelift-isle",
- "regalloc2",
-]
 
 [[package]]
 name = "traqilet-lang"
@@ -789,12 +770,6 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "unicode-width"
-version = "0.1.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
-
-[[package]]
-name = "unicode-width"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254"
@@ -811,15 +786,6 @@ version = "49.0.0-dev"
 dependencies = [
  "hashbrown 0.17.1",
  "libm",
-]
-
-[[package]]
-name = "winapi-util"
-version = "0.1.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
-dependencies = [
- "windows-sys",
 ]
 
 [[package]]

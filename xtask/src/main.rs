@@ -220,7 +220,13 @@ fn format_patch(root: &Path, upstream: &Upstream) {
 
     let dir = root.join(PATCHES).join(&upstream.name);
     let out = Command::new("git")
-        .args(["format-patch", "--zero-commit", "--no-signature", "-o"])
+        .args([
+            "format-patch",
+            "--zero-commit",
+            "--no-numbered",
+            "--no-signature",
+            "-o",
+        ])
         .arg(&dir)
         .arg(format!("{rev}..HEAD"))
         .current_dir(&checkout)

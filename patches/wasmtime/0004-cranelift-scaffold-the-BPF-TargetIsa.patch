@@ -1,0 +1,206 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Sat, 5 Sep 2026 10:01:27 +0000
+Subject: [PATCH] cranelift: scaffold the BPF TargetIsa
+
+Make `isa::lookup` answer `bpfeb` and `bpfel` triple with a `BpfBackend.
+This is pure scaffolding, nothing lowers yet.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/mod.rs | 174 +++++++++++++++++++++++++++
+ cranelift/codegen/src/isa/mod.rs     |   3 +
+ 2 files changed, 177 insertions(+)
+
+diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
+index 8ee7850..16024fb 100644
+--- a/cranelift/codegen/src/isa/bpf/mod.rs
++++ b/cranelift/codegen/src/isa/bpf/mod.rs
+@@ -3,3 +3,173 @@
+ mod inst;
+ mod lower;
+ pub mod settings;
++
++use crate::dominator_tree::DominatorTree;
++use crate::ir::{ArgumentExtension, Function, Type};
++#[cfg(feature = "unwind")]
++use crate::isa::unwind::{UnwindInfo, UnwindInfoKind};
++use crate::isa::{Builder as IsaBuilder, FunctionAlignment, IsaFlagsHashKey, TargetIsa};
++#[cfg(feature = "unwind")]
++use crate::machinst::CompiledCode;
++use crate::machinst::{CompiledCodeStencil, Reg, TextSectionBuilder};
++use crate::result::{CodegenError, CodegenResult};
++use crate::settings::{Flags, Value};
++use alloc::boxed::Box;
++use alloc::format;
++use alloc::string::{String, ToString};
++use alloc::vec::Vec;
++use core::fmt;
++use cranelift_control::ControlPlane;
++use target_lexicon::Triple;
++
++pub use settings::Flags as BpfFlags;
++
++/// A BPF backend.
++pub(crate) struct BpfBackend {
++    triple: Triple,
++    flags: Flags,
++    isa_flags: BpfFlags,
++}
++
++impl BpfBackend {
++    fn new_with_flags(triple: Triple, flags: Flags, isa_flags: BpfFlags) -> Self {
++        BpfBackend {
++            triple,
++            flags,
++            isa_flags,
++        }
++    }
++}
++
++impl fmt::Debug for BpfBackend {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        let BpfBackend {
++            triple,
++            flags: _,
++            isa_flags: _,
++        } = self;
++        f.debug_struct("BpfBackend")
++            .field("triple", triple)
++            .finish_non_exhaustive()
++    }
++}
++
++impl fmt::Display for BpfBackend {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        fmt::Debug::fmt(self, f)
++    }
++}
++
++impl TargetIsa for BpfBackend {
++    fn name(&self) -> &'static str {
++        "bpf"
++    }
++
++    fn triple(&self) -> &Triple {
++        &self.triple
++    }
++
++    fn flags(&self) -> &Flags {
++        &self.flags
++    }
++
++    fn isa_flags(&self) -> Vec<Value> {
++        self.isa_flags.iter().collect()
++    }
++
++    fn isa_flags_hash_key(&self) -> IsaFlagsHashKey<'_> {
++        IsaFlagsHashKey(self.isa_flags.hash_key())
++    }
++
++    fn dynamic_vector_bytes(&self, _dynamic_ty: Type) -> u32 {
++        0
++    }
++
++    fn page_size_align_log2(&self) -> u8 {
++        // A program is handed to the platform rather than mapped by us, so this
++        // is only the usual 4KiB.
++        12
++    }
++
++    fn compile_function(
++        &self,
++        _func: &Function,
++        _domtree: &DominatorTree,
++        _regalloc_ctx: &mut regalloc2::Ctx,
++        _want_disasm: bool,
++        _ctrl_plane: &mut ControlPlane,
++    ) -> CodegenResult<CompiledCodeStencil> {
++        Err(CodegenError::Unsupported(
++            "the BPF backend cannot lower a function yet".to_string(),
++        ))
++    }
++
++    #[cfg(feature = "unwind")]
++    fn emit_unwind_info(
++        &self,
++        _result: &CompiledCode,
++        _kind: UnwindInfoKind,
++    ) -> CodegenResult<Option<UnwindInfo>> {
++        Ok(None)
++    }
++
++    fn text_section_builder(&self, _num_labeled_funcs: usize) -> Box<dyn TextSectionBuilder> {
++        unimplemented!("the BPF backend has no instructions to lay out yet")
++    }
++
++    fn function_alignment(&self) -> FunctionAlignment {
++        // Every instruction occupies at least one 64-bit slot.
++        FunctionAlignment {
++            minimum: 8,
++            preferred: 8,
++        }
++    }
++
++    fn pretty_print_reg(&self, reg: Reg, _size: u8) -> String {
++        match reg.to_real_reg() {
++            Some(real) => format!("r{}", real.hw_enc()),
++            None => format!("{reg:?}"),
++        }
++    }
++
++    fn has_native_fma(&self) -> bool {
++        false
++    }
++
++    fn has_round(&self) -> bool {
++        false
++    }
++
++    fn has_blendv_lowering(&self, _ty: Type) -> bool {
++        false
++    }
++
++    fn has_x86_pshufb_lowering(&self) -> bool {
++        false
++    }
++
++    fn has_x86_pmulhrsw_lowering(&self) -> bool {
++        false
++    }
++
++    fn has_x86_pmaddubsw_lowering(&self) -> bool {
++        false
++    }
++
++    fn default_argument_extension(&self) -> ArgumentExtension {
++        ArgumentExtension::None
++    }
++}
++
++/// Create a new BPF ISA builder.
++pub fn isa_builder(triple: Triple) -> IsaBuilder {
++    IsaBuilder {
++        triple,
++        setup: self::settings::builder(),
++        constructor: |triple, shared_flags, builder| {
++            let isa_flags = BpfFlags::new(&shared_flags, builder);
++            let backend = BpfBackend::new_with_flags(triple, shared_flags, isa_flags);
++            Ok(backend.wrapped())
++        },
++    }
++}
+diff --git a/cranelift/codegen/src/isa/mod.rs b/cranelift/codegen/src/isa/mod.rs
+index 525dae8..8ac1b5d 100644
+--- a/cranelift/codegen/src/isa/mod.rs
++++ b/cranelift/codegen/src/isa/mod.rs
+@@ -122,6 +122,9 @@ pub fn lookup(triple: Triple) -> Result<Builder, LookupError> {
+         Architecture::Pulley64 | Architecture::Pulley64be => {
+             isa_builder!(pulley64, (feature = "pulley"), triple)
+         }
++        Architecture::Bpfeb | Architecture::Bpfel => {
++            isa_builder!(bpf, (feature = "bpf"), triple)
++        }
+         _ => Err(LookupError::Unsupported),
+     }
+ }

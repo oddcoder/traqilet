@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Keep the index script out of the way
+        run: cp .github/pages-index.sh "$RUNNER_TEMP/pages-index.sh"
       - name: Drop the reports over 30 days old
         run: |
           git config user.name github-actions
@@ -36,6 +38,10 @@ jobs:
                 echo "dropped $day"
               fi
             done
+            touch reports.tsv
+            awk -F '\t' -v cutoff="$cutoff" '$1 >= cutoff' reports.tsv >rows || true
+            mv rows reports.tsv
+            sh "$RUNNER_TEMP/pages-index.sh"
             git add -A
             if git diff --cached --quiet; then
               echo "nothing published before $cutoff"

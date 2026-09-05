@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 Date: Thu, 3 Sep 2026 15:17:19 +0000
-Subject: [PATCH] cranelift: scaffold an eBPF backend
+Subject: [PATCH] cranelift: scaffold a BPF backend
 
 Register a new ISA and add the necessary boilerplate for isle files to
 compile.  ISA is gated behind a cargo feature.
@@ -148,37 +148,37 @@ index 6f39a34..c3b4e7e 100644
  }
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
 new file mode 100644
-index 0000000..8e1c1a6
+index 0000000..dde3890
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
 @@ -0,0 +1,3 @@
-+;; eBPF machine instructions.
++;; BPF machine instructions.
 +
 +(type MInst (enum ))
 diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
 new file mode 100644
-index 0000000..8d0db48
+index 0000000..4a30b40
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/lower.isle
 @@ -0,0 +1 @@
-+;; eBPF instruction selection: CLIF-to-MachInst lowering.
++;; BPF instruction selection: CLIF-to-MachInst lowering.
 diff --git a/cranelift/codegen/src/isa/bpf/lower.rs b/cranelift/codegen/src/isa/bpf/lower.rs
 new file mode 100644
-index 0000000..836879b
+index 0000000..4ef43a2
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/lower.rs
 @@ -0,0 +1,4 @@
-+//! Lowering rules for eBPF.
++//! Lowering rules for BPF.
 +
 +// ISLE integration glue.
 +pub(super) mod isle;
 diff --git a/cranelift/codegen/src/isa/bpf/lower/isle.rs b/cranelift/codegen/src/isa/bpf/lower/isle.rs
 new file mode 100644
-index 0000000..9722883
+index 0000000..83af6ee
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/lower/isle.rs
 @@ -0,0 +1,15 @@
-+//! ISLE integration glue code for eBPF lowering.
++//! ISLE integration glue code for BPF lowering.
 +
 +// Pull in the ISLE generated code.
 +pub mod generated_code;
@@ -212,21 +212,21 @@ index 0000000..92f444c
 +include!(concat!(env!("ISLE_DIR"), "/isle_bpf.rs"));
 diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
 new file mode 100644
-index 0000000..5cf2d9e
+index 0000000..e03bc4a
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/mod.rs
 @@ -0,0 +1,4 @@
-+//! eBPF Instruction Set Architecture.
++//! BPF Instruction Set Architecture.
 +
 +mod lower;
 +pub mod settings;
 diff --git a/cranelift/codegen/src/isa/bpf/settings.rs b/cranelift/codegen/src/isa/bpf/settings.rs
 new file mode 100644
-index 0000000..a810921
+index 0000000..7c0a3cf
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/settings.rs
 @@ -0,0 +1,13 @@
-+//! eBPF settings.
++//! BPF settings.
 +
 +#![allow(dead_code, reason = "the generated settings include some dead code")]
 +

@@ -28,8 +28,10 @@ jobs:
       # xtask owns the flags and the floor, so a local run and this one cannot drift.
       - name: Measure
         run: cargo xtask coverage --html | tee coverage.txt
-      # The table is worth reading without leaving the run page; the report itself is only
-      # worth opening when a number in the table looks wrong.
+      # The table rides along with the report, so the site can quote the number without
+      # anyone parsing the html for it.
+      - name: Keep the table with the report
+        run: sed -n '/^Filename/,$p' coverage.txt >target/llvm-cov/html/summary.txt
       - name: Summarise
         if: always()
         run: |
@@ -38,31 +40,35 @@ jobs:
             sed -n '/^Filename/,$p' coverage.txt
             echo '```'
           } >>"$GITHUB_STEP_SUMMARY"
-      # A pull request cannot publish, so it gets the report as a download instead.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-html
           path: target/llvm-cov/html
 
-  # Pages is the one place GitHub serves html as html rather than as source. Each run
-  # keeps its own url so an old link stays the report it was, and `latest/` is the only
-  # url worth writing down. The write token lives here rather than in the job above,
-  # which runs the repository's own test code and also runs for pull requests.
+  # Pages is the one place GitHub serves html as html rather than as source. Every run
+  # keeps its own url so an old link stays the report it was, and only main moves
+  # `latest/`. A pull request from a fork holds a read-only token and cannot publish at
+  # all, so it is left out rather than failing here. The write token lives in this job
+  # rather than the one above, which runs the repository's own test code.
   publish:
     needs: coverage
-    if: github.event_name == 'push'
+    if: >-
+      github.event_name == 'push'
+      || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      # Outside the working tree on purpose: the publishing loop resets the tree on every
-      # attempt, and the report has to survive that.
+      # Both of these have to outlive the working tree: the publishing loop resets it on
+      # every attempt.
       - uses: actions/download-artifact@v4
         with:
           name: coverage-html
           path: ${{ runner.temp }}/report
+      - name: Keep the index script out of the way
+        run: cp .github/pages-index.sh "$RUNNER_TEMP/pages-index.sh"
       - name: Publish
         env:
           REPORT: ${{ runner.temp }}/report
@@ -74,7 +80,16 @@ jobs:
             exit 1
           }
           day=$(date -u +%F)
-          dir="runs/$day/${{ github.run_id }}"
+          run=${{ github.run_id }}
+          dir="runs/$day/$run"
+          pct=$(awk '$1 == "TOTAL" { print $10 }' "$REPORT/summary.txt")
+          if [ "${{ github.event_name }}" = push ]; then
+            kind=main
+            label=${{ github.sha }}
+          else
+            kind=pr
+            label=${{ github.event.pull_request.number }}
+          fi
           echo "url=https://oddcoder.github.io/traqilet/$dir/" >>"$GITHUB_ENV"
           # Nothing here is rebased. Every attempt starts from what is published right
           # now and lays this report over it, so a report that landed mid-attempt is kept
@@ -82,21 +97,28 @@ jobs:
           for attempt in $(seq 20); do
             git fetch -q origin gh-pages
             git switch -q --detach FETCH_HEAD
-            rm -rf "$dir" latest
+            rm -rf "$dir"
             mkdir -p "$dir"
             cp -r "$REPORT/." "$dir"
-            cp -r "$REPORT/." latest
+            # Only main owns the url people write down.
+            if [ "$kind" = main ]; then
+              rm -rf latest
+              cp -r "$REPORT/." latest
+            fi
+            touch reports.tsv
+            awk -F '\t' -v run="$run" '$2 != run' reports.tsv >rows
+            printf '%s\t%s\t%s\t%s\t%s\n' "$day" "$run" "$kind" "$label" "$pct" >>rows
+            mv rows reports.tsv
+            sh "$RUNNER_TEMP/pages-index.sh"
             # Without this Pages runs the report through Jekyll, which reads the `{{` in
             # a quoted format string as a Liquid tag and fails the deployment.
             touch .nojekyll
-            # Pages serves no directory index, so the site root needs one of its own.
-            printf '<!doctype html><meta charset=utf-8><title>traqilet coverage</title><meta http-equiv=refresh content="0;url=latest/"><a href=latest/>coverage report</a>\n' >index.html
             git add -A
             if git diff --cached --quiet; then
               echo "this report is already published"
               exit 0
             fi
-            git commit -qm "coverage: ${{ github.sha }} from run ${{ github.run_id }}"
+            git commit -qm "coverage: $pct of lines from run $run"
             if git push -q origin HEAD:gh-pages; then
               echo "published on attempt $attempt"
               exit 0

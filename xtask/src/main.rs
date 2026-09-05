@@ -9,6 +9,7 @@ const PATCHED: &str = ".patched";
 const PATCHES: &str = "patches";
 const BASE: &str = "base";
 const APPLIED: &str = ".git/xtask-applied";
+const COVERAGE_FLOOR: &str = "85";
 
 /// Bootstrap the patched cranelift checkout the workspace builds against.
 ///
@@ -28,6 +29,12 @@ enum Task {
     Build,
     /// Delete the patched checkouts, then clean the workspace
     Clean,
+    /// Measure the test coverage of `crates/`, and fail below the floor
+    Coverage {
+        /// Also write a browsable report to `target/llvm-cov/html`
+        #[arg(long)]
+        html: bool,
+    },
     /// Rebuild the checkouts from `patches/`, discarding what is in them
     Am {
         /// Directory under `patches/` to act on, or every one of them
@@ -49,12 +56,13 @@ fn main() -> ExitCode {
     match Cli::parse().task.unwrap_or(Task::Build) {
         Task::Build => {
             prepare(&root);
-            cargo(&root, "build")
+            cargo(&root, ["build"])
         }
         Task::Clean => {
             fs::remove_dir_all(root.join(PATCHED)).ok();
-            cargo(&root, "clean")
+            cargo(&root, ["clean"])
         }
+        Task::Coverage { html } => coverage(&root, html),
         Task::Am { upstream } => {
             for picked in select(&root, upstream.as_deref()) {
                 reapply(&root, &picked);
@@ -74,6 +82,27 @@ fn prepare(root: &Path) {
     for upstream in upstreams(root) {
         sync(root, &upstream);
     }
+}
+
+fn coverage(root: &Path, html: bool) -> ExitCode {
+    prepare(root);
+    if !cargo_ok(root, ["llvm-cov", "--no-report", "--locked", "--workspace"]) {
+        return ExitCode::FAILURE;
+    }
+    if html && !cargo_ok(root, ["llvm-cov", "report", "--html"]) {
+        return ExitCode::FAILURE;
+    }
+    println!("xtask: holding crates/ to {COVERAGE_FLOOR}% of lines");
+    cargo(
+        root,
+        [
+            "llvm-cov",
+            "report",
+            "--summary-only",
+            "--fail-under-lines",
+            COVERAGE_FLOOR,
+        ],
+    )
 }
 
 fn upstreams(root: &Path) -> Vec<Upstream> {
@@ -301,18 +330,21 @@ fn name(path: &Path) -> &str {
         .expect("a file name that is utf-8")
 }
 
-fn cargo(root: &Path, task: &str) -> ExitCode {
-    let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
-    let ok = Command::new(cargo)
-        .arg(task)
-        .current_dir(root)
-        .status()
-        .is_ok_and(|status| status.success());
-    if ok {
+fn cargo<S: AsRef<OsStr>>(root: &Path, args: impl IntoIterator<Item = S>) -> ExitCode {
+    if cargo_ok(root, args) {
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE
     }
+}
+
+fn cargo_ok<S: AsRef<OsStr>>(root: &Path, args: impl IntoIterator<Item = S>) -> bool {
+    let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    Command::new(cargo)
+        .args(args)
+        .current_dir(root)
+        .status()
+        .is_ok_and(|status| status.success())
 }
 
 fn git_ok<S: AsRef<OsStr>>(at: &Path, args: impl IntoIterator<Item = S>) -> bool {

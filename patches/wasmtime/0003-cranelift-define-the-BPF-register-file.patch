@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Sat, 5 Sep 2026 09:47:00 +0000
+Subject: [PATCH] cranelift: define the BPF register file
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/inst/mod.rs  |  3 +
+ cranelift/codegen/src/isa/bpf/inst/regs.rs | 71 ++++++++++++++++++++++
+ cranelift/codegen/src/isa/bpf/mod.rs       |  1 +
+ 3 files changed, 75 insertions(+)
+ create mode 100644 cranelift/codegen/src/isa/bpf/inst/mod.rs
+ create mode 100644 cranelift/codegen/src/isa/bpf/inst/regs.rs
+
+diff --git a/cranelift/codegen/src/isa/bpf/inst/mod.rs b/cranelift/codegen/src/isa/bpf/inst/mod.rs
+new file mode 100644
+index 0000000..3917692
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/inst/mod.rs
+@@ -0,0 +1,3 @@
++//! This module defines BPF-specific machine instruction types.
++
++pub mod regs;
+diff --git a/cranelift/codegen/src/isa/bpf/inst/regs.rs b/cranelift/codegen/src/isa/bpf/inst/regs.rs
+new file mode 100644
+index 0000000..a22d01b
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/inst/regs.rs
+@@ -0,0 +1,71 @@
++//! BPF ISA definitions: registers.
++//!
++//! RFC 9669 specifies no register file; the roles below are convention
++//! from <https://github.com/ietf-wg-bpf/ebpf-docs/blob/main/rst/abi.rst>
++//!
++//! * `r0`: return value from calls, and the program's exit value
++//! * `r1` - `r5`: call arguments, and scratch across a call
++//! * `r6` - `r9`: preserved by a call
++//! * `r10`: read-only frame pointer
++//!
++//! `r0` - `r5` are caller saved registers. `r6` - `r9` are callee saved
++//! registers.
++
++#![expect(
++    dead_code,
++    reason = "the register file is complete before the ABI and emit consume it"
++)]
++
++use crate::machinst::Reg;
++use regalloc2::{MachineEnv, PReg, PRegSet, RegClass};
++
++#[inline]
++pub(crate) const fn x_reg(enc: usize) -> Reg {
++    Reg::from_real_reg(px_reg(enc))
++}
++
++#[inline]
++const fn px_reg(enc: usize) -> PReg {
++    PReg::new(enc, RegClass::Int)
++}
++
++pub(crate) const CALLER_SAVED: PRegSet = PRegSet::empty()
++    .with(px_reg(0))
++    .with(px_reg(1))
++    .with(px_reg(2))
++    .with(px_reg(3))
++    .with(px_reg(4))
++    .with(px_reg(5));
++
++pub(crate) const fn create_reg_environment() -> MachineEnv {
++    // caller-saved registers come first because callee-saved ones
++    // cost a save and a restore. Those const nothing.
++    let preferred_regs_by_class: [PRegSet; 3] = [
++        PRegSet::empty()
++            .with(px_reg(6))
++            .with(px_reg(7))
++            .with(px_reg(8))
++            .with(px_reg(9)),
++        PRegSet::empty(),
++        PRegSet::empty(),
++    ];
++
++    let non_preferred_regs_by_class: [PRegSet; 3] = [
++        PRegSet::empty()
++            .with(px_reg(0))
++            .with(px_reg(1))
++            .with(px_reg(2))
++            .with(px_reg(3))
++            .with(px_reg(4))
++            .with(px_reg(5)),
++        PRegSet::empty(),
++        PRegSet::empty(),
++    ];
++
++    MachineEnv {
++        preferred_regs_by_class,
++        non_preferred_regs_by_class,
++        fixed_stack_slots: vec![],
++        scratch_by_class: [None, None, None],
++    }
++}
+diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
+index e03bc4a..8ee7850 100644
+--- a/cranelift/codegen/src/isa/bpf/mod.rs
++++ b/cranelift/codegen/src/isa/bpf/mod.rs
+@@ -1,4 +1,5 @@
+ //! BPF Instruction Set Architecture.
+ 
++mod inst;
+ mod lower;
+ pub mod settings;

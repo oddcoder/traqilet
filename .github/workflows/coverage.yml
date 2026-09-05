@@ -1,0 +1,110 @@
+name: coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      # xtask owns the flags and the floor, so a local run and this one cannot drift.
+      - name: Measure
+        run: cargo xtask coverage --html | tee coverage.txt
+      # The table is worth reading without leaving the run page; the report itself is only
+      # worth opening when a number in the table looks wrong.
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo '```'
+            sed -n '/^Filename/,$p' coverage.txt
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+      # A pull request cannot publish, so it gets the report as a download instead.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-html
+          path: target/llvm-cov/html
+
+  # Pages is the one place GitHub serves html as html rather than as source. Each run
+  # keeps its own url so an old link stays the report it was, and `latest/` is the only
+  # url worth writing down. The write token lives here rather than in the job above,
+  # which runs the repository's own test code and also runs for pull requests.
+  publish:
+    needs: coverage
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      # Outside the working tree on purpose: the publishing loop resets the tree on every
+      # attempt, and the report has to survive that.
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-html
+          path: ${{ runner.temp }}/report
+      - name: Publish
+        env:
+          REPORT: ${{ runner.temp }}/report
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git ls-remote --exit-code -h origin gh-pages >/dev/null 2>&1 || {
+            echo "::error::there is no gh-pages branch to publish to"
+            exit 1
+          }
+          day=$(date -u +%F)
+          dir="runs/$day/${{ github.run_id }}"
+          echo "url=https://oddcoder.github.io/traqilet/$dir/" >>"$GITHUB_ENV"
+          # Nothing here is rebased. Every attempt starts from what is published right
+          # now and lays this report over it, so a report that landed mid-attempt is kept
+          # rather than reverted, and no two attempts can conflict.
+          for attempt in $(seq 20); do
+            git fetch -q origin gh-pages
+            git switch -q --detach FETCH_HEAD
+            rm -rf "$dir" latest
+            mkdir -p "$dir"
+            cp -r "$REPORT/." "$dir"
+            cp -r "$REPORT/." latest
+            # Without this Pages runs the report through Jekyll, which reads the `{{` in
+            # a quoted format string as a Liquid tag and fails the deployment.
+            touch .nojekyll
+            # Pages serves no directory index, so the site root needs one of its own.
+            printf '<!doctype html><meta charset=utf-8><title>traqilet coverage</title><meta http-equiv=refresh content="0;url=latest/"><a href=latest/>coverage report</a>\n' >index.html
+            git add -A
+            if git diff --cached --quiet; then
+              echo "this report is already published"
+              exit 0
+            fi
+            git commit -qm "coverage: ${{ github.sha }} from run ${{ github.run_id }}"
+            if git push -q origin HEAD:gh-pages; then
+              echo "published on attempt $attempt"
+              exit 0
+            fi
+            echo "attempt $attempt lost the race, starting over"
+            sleep $((RANDOM % 5 + 1))
+          done
+          echo "::error::could not publish the report in 20 attempts"
+          exit 1
+      - name: Link it from this run
+        run: echo "[Coverage report for this run]($url)" >>"$GITHUB_STEP_SUMMARY"

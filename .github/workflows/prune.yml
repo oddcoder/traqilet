@@ -1,0 +1,53 @@
+name: prune
+
+# Apart from the rest of ci: this drops published coverage reports on a clock rather than
+# in answer to a commit, so a failure here is housekeeping left undone rather than a
+# broken pull request.
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Drop the reports over 30 days old
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          cutoff=$(date -u -d '30 days ago' +%F)
+          # The same loop the publishing job runs, for the same reason: a report landing
+          # while this job works is kept, and losing the race costs an attempt rather
+          # than a night.
+          for attempt in $(seq 20); do
+            git fetch -q origin gh-pages
+            git switch -q --detach FETCH_HEAD
+            # Reports are filed under the day they were published, so their age is in the
+            # path and no timestamp has to survive being cloned.
+            for day in runs/*; do
+              [ -d "$day" ] || continue
+              if [[ "$(basename "$day")" < "$cutoff" ]]; then
+                rm -rf "$day"
+                echo "dropped $day"
+              fi
+            done
+            git add -A
+            if git diff --cached --quiet; then
+              echo "nothing published before $cutoff"
+              exit 0
+            fi
+            git commit -qm "coverage: drop the reports from before $cutoff"
+            if git push -q origin HEAD:gh-pages; then
+              echo "pruned on attempt $attempt"
+              exit 0
+            fi
+            echo "attempt $attempt lost the race, starting over"
+            sleep $((RANDOM % 5 + 1))
+          done
+          echo "::error::could not prune the reports in 20 attempts"
+          exit 1

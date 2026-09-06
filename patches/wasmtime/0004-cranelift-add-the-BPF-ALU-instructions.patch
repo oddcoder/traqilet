@@ -25,18 +25,16 @@ problem becomes a register allocator problem.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/inst.isle       | 43 ++++++++++++++++++-
- .../src/isa/bpf/lower/isle/generated_code.rs  |  1 -
- 2 files changed, 42 insertions(+), 2 deletions(-)
+ cranelift/codegen/src/isa/bpf/inst.isle | 40 ++++++++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index dde3890..3c84034 100644
+index 02f54f7..3c84034 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
-@@ -1,3 +1,44 @@
+@@ -1,6 +1,44 @@
  ;; BPF machine instructions.
  
--(type MInst (enum ))
 +;; RFC 9669 table 5. Neg, Mov, Movsx and End are handled separately.
 +(type AluOp (enum Add Sub Mul Div SDiv Or And Lsh Rsh Mod SMod Xor Arsh))
 +
@@ -59,8 +57,9 @@ index dde3890..3c84034 100644
 +;; RFC 9669 table 6. ALU64 case is handled separately by End64.
 +(type EndByteOrder (enum LE BE))
 +
-+(type MInst
-+    (enum
+ (type MInst
+     (enum
+-        (Placeholder)
 +        ;; RFC 9669 table 5.
 +        (Alu (alu_op AluOp) (class AluClass) (rd WritableReg) (rs1 Reg) (src AluSource))
 +
@@ -78,15 +77,4 @@ index dde3890..3c84034 100644
 +
 +        ;; RFC 9669 table 5 & section 4.2
 +        (End64 (width EndWidth) (rd WritableReg) (rs Reg))
-+    ))
-diff --git a/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs b/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
-index 92f444c..2746546 100644
---- a/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
-+++ b/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
-@@ -1,6 +1,5 @@
- #![expect(
-     dead_code,
--    unreachable_code,
-     unreachable_patterns,
-     unused_imports,
-     unused_variables,
+     ))

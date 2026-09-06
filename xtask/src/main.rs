@@ -316,12 +316,25 @@ fn rewind(checkout: &Path, rev: &str) {
 fn apply(checkout: &Path, upstream: &Upstream) {
     const WHO: [&str; 4] = ["-c", "user.name=xtask", "-c", "user.email=xtask@invalid"];
 
-    for patch in &upstream.series {
-        println!("xtask: {}: applying {}", upstream.name, name(patch));
-        let mut args: Vec<&OsStr> = WHO.iter().map(OsStr::new).collect();
-        args.extend([OsStr::new("am"), OsStr::new("-q"), patch.as_os_str()]);
-        git(checkout, args);
-    }
+    println!(
+        "xtask: {}: applying {} patches",
+        upstream.name,
+        upstream.series.len()
+    );
+    let mut args: Vec<&OsStr> = WHO.iter().map(OsStr::new).collect();
+    args.push(OsStr::new("am"));
+    args.extend(upstream.series.iter().map(|patch| patch.as_os_str()));
+    let status = Command::new("git")
+        .args(args)
+        .current_dir(checkout)
+        .status()
+        .unwrap_or_else(|e| panic!("running git am: {e}"));
+    assert!(
+        status.success(),
+        "{}: the patch git names above does not apply; `git am --abort` in {} to undo",
+        upstream.name,
+        checkout.display()
+    );
 }
 
 fn name(path: &Path) -> &str {

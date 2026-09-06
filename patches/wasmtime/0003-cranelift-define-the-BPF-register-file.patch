@@ -99,12 +99,13 @@ index 0000000..a22d01b
 +    }
 +}
 diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
-index e03bc4a..8ee7850 100644
+index 52552f4..5e542dd 100644
 --- a/cranelift/codegen/src/isa/bpf/mod.rs
 +++ b/cranelift/codegen/src/isa/bpf/mod.rs
-@@ -1,4 +1,5 @@
+@@ -1,5 +1,6 @@
  //! BPF Instruction Set Architecture.
  
 +mod inst;
  mod lower;
  pub mod settings;
+ 

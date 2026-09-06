@@ -8,16 +8,16 @@ This is pure scaffolding, nothing lowers yet.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/mod.rs | 174 +++++++++++++++++++++++++++
+ cranelift/codegen/src/isa/bpf/mod.rs | 170 +++++++++++++++++++++++++++
  cranelift/codegen/src/isa/mod.rs     |   3 +
- 2 files changed, 177 insertions(+)
+ 2 files changed, 173 insertions(+)
 
 diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
-index 8ee7850..16024fb 100644
+index e03bc4a..52552f4 100644
 --- a/cranelift/codegen/src/isa/bpf/mod.rs
 +++ b/cranelift/codegen/src/isa/bpf/mod.rs
-@@ -3,3 +3,173 @@
- mod inst;
+@@ -2,3 +2,173 @@
+ 
  mod lower;
  pub mod settings;
 +

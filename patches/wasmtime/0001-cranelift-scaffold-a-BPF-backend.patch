@@ -31,7 +31,7 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  create mode 100644 cranelift/codegen/src/isa/bpf/settings.rs
 
 diff --git a/cranelift/codegen/Cargo.toml b/cranelift/codegen/Cargo.toml
-index 67193fc..2956c76 100644
+index fe6c913..d982c76 100644
 --- a/cranelift/codegen/Cargo.toml
 +++ b/cranelift/codegen/Cargo.toml
 @@ -95,6 +95,7 @@ x86 = []

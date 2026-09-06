@@ -25,11 +25,11 @@ problem becomes a register allocator problem.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/inst.isle | 73 ++++++++++++++++++++++++-
- 1 file changed, 72 insertions(+), 1 deletion(-)
+ cranelift/codegen/src/isa/bpf/inst.isle | 72 ++++++++++++++++++++++++-
+ 1 file changed, 71 insertions(+), 1 deletion(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index b305c30..fbed010 100644
+index b305c30..447f928 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
 @@ -1,10 +1,80 @@

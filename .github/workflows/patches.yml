@@ -1,0 +1,32 @@
+name: patches
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  round-trip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: cargo xtask am
+      - run: cargo xtask format-patch
+      - name: The series is what applying it produces
+        run: |
+          git status --porcelain -- patches/ >changed
+          if [ -s changed ]; then
+            cat changed
+            git diff -- patches/
+            echo "::error::patches/ is not what applying it produces; run \`cargo xtask am && cargo xtask format-patch\` and commit the result"
+            exit 1
+          fi

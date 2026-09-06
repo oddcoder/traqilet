@@ -1,0 +1,123 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Sat, 5 Sep 2026 13:18:50 +0000
+Subject: [PATCH] cranelift: add the BPF conformance groups
+
+RFC 9669 section 2.4 does not require a target to implement the whole
+ISA. It splits it into groups, each implemented independently.
+
+Add an ISA setting and an ISLE predicate for each, except two: base32
+as it is mandatory, and packet as it is deprecated.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/meta/src/isa/bpf.rs       | 43 ++++++++++++++++++++-
+ cranelift/codegen/src/isa/bpf/inst.isle     | 15 +++++++
+ cranelift/codegen/src/isa/bpf/lower/isle.rs | 20 ++++++++++
+ 3 files changed, 77 insertions(+), 1 deletion(-)
+
+diff --git a/cranelift/codegen/meta/src/isa/bpf.rs b/cranelift/codegen/meta/src/isa/bpf.rs
+index 4c1eeb2..8202078 100644
+--- a/cranelift/codegen/meta/src/isa/bpf.rs
++++ b/cranelift/codegen/meta/src/isa/bpf.rs
+@@ -1,6 +1,47 @@
+ use crate::cdsl::{isa::TargetIsa, settings::SettingGroupBuilder};
+ 
+ pub(crate) fn define() -> TargetIsa {
+-    let settings = SettingGroupBuilder::new("bpf");
++    let mut settings = SettingGroupBuilder::new("bpf");
++
++    // RFC 9669 section 2.4
++    settings.add_bool(
++        "has_base64",
++        "Has the base64 conformance group",
++        "64-bit arithmetic, jumps, and byte swaps.",
++        true,
++    );
++
++    // RFC 9669 section 2.4
++    settings.add_bool(
++        "has_atomic32",
++        "Has the atomic32 conformance group",
++        "32-bit atomic operations.",
++        true,
++    );
++
++    // RFC 9669 section 2.4
++    settings.add_bool(
++        "has_atomic64",
++        "Has the atomic64 conformance group",
++        "64-bit atomic operations. Implies `has_atomic32`.",
++        true,
++    );
++
++    // RFC 9669 section 2.4
++    settings.add_bool(
++        "has_divmul32",
++        "Has the divmul32 conformance group",
++        "32-bit multiplication, division, and modulo.",
++        true,
++    );
++
++    // RFC 9669 section 2.4
++    settings.add_bool(
++        "has_divmul64",
++        "Has the divmul64 conformance group",
++        "64-bit multiplication, division, and modulo. Implies `has_divmul32`.",
++        true,
++    );
++
+     TargetIsa::new("bpf", settings.build())
+ }
+diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
+index 3c84034..4d89f25 100644
+--- a/cranelift/codegen/src/isa/bpf/inst.isle
++++ b/cranelift/codegen/src/isa/bpf/inst.isle
+@@ -42,3 +42,18 @@
+         ;; RFC 9669 table 5 & section 4.2
+         (End64 (width EndWidth) (rd WritableReg) (rs Reg))
+     ))
++
++(decl pure has_base64 () bool)
++(extern constructor has_base64 has_base64)
++
++(decl pure has_atomic32 () bool)
++(extern constructor has_atomic32 has_atomic32)
++
++(decl pure has_atomic64 () bool)
++(extern constructor has_atomic64 has_atomic64)
++
++(decl pure has_divmul32 () bool)
++(extern constructor has_divmul32 has_divmul32)
++
++(decl pure has_divmul64 () bool)
++(extern constructor has_divmul64 has_divmul64)
+diff --git a/cranelift/codegen/src/isa/bpf/lower/isle.rs b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+index d4f2e69..ab8ae2f 100644
+--- a/cranelift/codegen/src/isa/bpf/lower/isle.rs
++++ b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+@@ -43,4 +43,24 @@ impl generated_code::Context for BpfIsleContext<'_, '_> {
+     fn emit(&mut self, inst: &MInst) -> Unit {
+         self.lower_ctx.emit(inst.clone());
+     }
++
++    fn has_base64(&mut self) -> bool {
++        self.backend.isa_flags.has_base64()
++    }
++
++    fn has_atomic32(&mut self) -> bool {
++        self.backend.isa_flags.has_atomic32()
++    }
++
++    fn has_atomic64(&mut self) -> bool {
++        self.backend.isa_flags.has_atomic64()
++    }
++
++    fn has_divmul32(&mut self) -> bool {
++        self.backend.isa_flags.has_divmul32()
++    }
++
++    fn has_divmul64(&mut self) -> bool {
++        self.backend.isa_flags.has_divmul64()
++    }
+ }

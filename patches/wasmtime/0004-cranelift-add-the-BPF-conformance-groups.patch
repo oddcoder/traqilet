@@ -70,12 +70,12 @@ index 4c1eeb2..8202078 100644
      TargetIsa::new("bpf", settings.build())
  }
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index 3c84034..4d89f25 100644
+index 02f54f7..b305c30 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
-@@ -42,3 +42,18 @@
-         ;; RFC 9669 table 5 & section 4.2
-         (End64 (width EndWidth) (rd WritableReg) (rs Reg))
+@@ -4,3 +4,18 @@
+     (enum
+         (Placeholder)
      ))
 +
 +(decl pure has_base64 () bool)

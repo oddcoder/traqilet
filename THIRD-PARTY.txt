@@ -27,15 +27,15 @@ is set in about.toml. The shape of this file is set in about.hbs. Edit those, no
 ================================================================================
 
 Applies to:
-  cranelift-bforest 0.136.0-dev
-  cranelift-codegen 0.136.0-dev
-  cranelift-codegen 0.136.0-dev
-  cranelift-codegen 0.136.0-dev
-  cranelift-codegen-meta 0.136.0-dev
-  cranelift-codegen-shared 0.136.0-dev
-  cranelift-control 0.136.0-dev
-  cranelift-entity 0.136.0-dev
-  cranelift-frontend 0.136.0-dev
+  cranelift-bforest 0.137.0-dev
+  cranelift-codegen 0.137.0-dev
+  cranelift-codegen 0.137.0-dev
+  cranelift-codegen 0.137.0-dev
+  cranelift-codegen-meta 0.137.0-dev
+  cranelift-codegen-shared 0.137.0-dev
+  cranelift-control 0.137.0-dev
+  cranelift-entity 0.137.0-dev
+  cranelift-frontend 0.137.0-dev
   regalloc2 0.15.2
   target-lexicon 0.13.5
 
@@ -1352,12 +1352,12 @@ limitations under the License.
 ================================================================================
 
 Applies to:
-  cranelift-assembler-x64 0.136.0-dev
-  cranelift-assembler-x64-meta 0.136.0-dev
-  cranelift-bitset 0.136.0-dev
-  cranelift-isle 0.136.0-dev
-  cranelift-srcgen 0.136.0-dev
-  wasmtime-internal-core 49.0.0-dev
+  cranelift-assembler-x64 0.137.0-dev
+  cranelift-assembler-x64-meta 0.137.0-dev
+  cranelift-bitset 0.137.0-dev
+  cranelift-isle 0.137.0-dev
+  cranelift-srcgen 0.137.0-dev
+  wasmtime-internal-core 50.0.0-dev
   traqilet-btf 0.1.0
   traqilet 0.1.0
   traqilet-lang 0.1.0

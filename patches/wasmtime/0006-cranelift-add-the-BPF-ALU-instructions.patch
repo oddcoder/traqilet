@@ -29,10 +29,10 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  1 file changed, 39 insertions(+), 1 deletion(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index 02f54f7..3c84034 100644
+index b305c30..4d89f25 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
-@@ -1,6 +1,44 @@
+@@ -1,8 +1,46 @@
  ;; BPF machine instructions.
  
 +;; RFC 9669 table 5. Neg, Mov, Movsx and End are handled separately.
@@ -78,3 +78,5 @@ index 02f54f7..3c84034 100644
 +        ;; RFC 9669 table 5 & section 4.2
 +        (End64 (width EndWidth) (rd WritableReg) (rs Reg))
      ))
+ 
+ (decl pure has_base64 () bool)

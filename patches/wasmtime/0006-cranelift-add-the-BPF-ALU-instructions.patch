@@ -25,14 +25,14 @@ problem becomes a register allocator problem.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/inst.isle | 64 ++++++++++++++++++++++++-
- 1 file changed, 63 insertions(+), 1 deletion(-)
+ cranelift/codegen/src/isa/bpf/inst.isle | 73 ++++++++++++++++++++++++-
+ 1 file changed, 72 insertions(+), 1 deletion(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index b305c30..eed609c 100644
+index b305c30..fbed010 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
-@@ -1,10 +1,68 @@
+@@ -1,10 +1,80 @@
  ;; BPF machine instructions.
  
 +;; RFC 9669 table 5. Neg, Mov, Movsx and End are handled separately.
@@ -92,6 +92,18 @@ index b305c30..eed609c 100644
 +
 +(decl alu_k (AluOp AluClass Reg i32) Reg)
 +(rule (alu_k op class rs1 imm) (alu op class rs1 (AluSource.K imm)))
++
++(decl mov (AluClass AluSource) Reg)
++(rule (mov class src)
++    (let ((rd WritableReg (temp_writable_reg $I64))
++          (_ Unit (emit (MInst.Mov class rd src))))
++        rd))
++
++(decl mov_x (AluClass Reg) Reg)
++(rule (mov_x class rs) (mov class (AluSource.X rs)))
++
++(decl mov_k (AluClass i32) Reg)
++(rule (mov_k class imm) (mov class (AluSource.K imm)))
 +
 +(decl alu_neg (AluClass Reg) Reg)
 +(rule (alu_neg class rs)

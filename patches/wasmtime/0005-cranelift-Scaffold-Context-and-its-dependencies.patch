@@ -1,0 +1,498 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Sat, 5 Sep 2026 23:12:02 +0000
+Subject: [PATCH] cranelift: Scaffold Context and its dependencies
+
+ISLE rule cans only call ISLE terms. Terms that are declared extern
+transpile to methods on a trait the ISLE compiler generates. so
+something has to implement that trait. That something is a
+BpfIsleContext.
+
+Add this BpfIsleContext along side all the scaffolding needed to make
+rustc hapy.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/abi.rs        | 215 ++++++++++++++++++++
+ cranelift/codegen/src/isa/bpf/inst/mod.rs   | 185 +++++++++++++++++
+ cranelift/codegen/src/isa/bpf/lower/isle.rs |  33 ++-
+ cranelift/codegen/src/isa/bpf/mod.rs        |   1 +
+ 4 files changed, 433 insertions(+), 1 deletion(-)
+ create mode 100644 cranelift/codegen/src/isa/bpf/abi.rs
+
+diff --git a/cranelift/codegen/src/isa/bpf/abi.rs b/cranelift/codegen/src/isa/bpf/abi.rs
+new file mode 100644
+index 0000000..67b4601
+--- /dev/null
++++ b/cranelift/codegen/src/isa/bpf/abi.rs
+@@ -0,0 +1,215 @@
++//! Implementation of the BPF ABI.
++
++use crate::ir::{self, Signature, Type};
++use crate::isa;
++use crate::machinst::*;
++use crate::result::CodegenResult;
++use crate::settings;
++use alloc::vec::Vec;
++use regalloc2::{MachineEnv, PRegSet};
++use smallvec::SmallVec;
++
++use super::inst::Inst;
++
++/// BPF ABI behaviour.
++pub struct BpfMachineDeps;
++
++impl ABIMachineSpec for BpfMachineDeps {
++    type I = Inst;
++    type F = super::settings::Flags;
++
++    const STACK_ARG_RET_SIZE_LIMIT: u32 = 0;
++
++    fn word_bits() -> u32 {
++        todo!()
++    }
++
++    fn stack_align(_call_conv: isa::CallConv) -> u32 {
++        todo!()
++    }
++
++    fn compute_arg_locs(
++        _call_conv: isa::CallConv,
++        _flags: &settings::Flags,
++        _params: &[ir::AbiParam],
++        _args_or_rets: ArgsOrRets,
++        _add_ret_area_ptr: bool,
++        _args: ArgsAccumulator,
++    ) -> CodegenResult<(u32, Option<usize>)> {
++        todo!()
++    }
++
++    fn gen_load_stack(_mem: StackAMode, _into_reg: Writable<Reg>, _ty: Type) -> Inst {
++        todo!()
++    }
++
++    fn gen_store_stack(_mem: StackAMode, _from_reg: Reg, _ty: Type) -> Inst {
++        todo!()
++    }
++
++    fn gen_move(_to_reg: Writable<Reg>, _from_reg: Reg, _ty: Type) -> Inst {
++        todo!()
++    }
++
++    fn gen_extend(
++        _to_reg: Writable<Reg>,
++        _from_reg: Reg,
++        _is_signed: bool,
++        _from_bits: u8,
++        _to_bits: u8,
++    ) -> Inst {
++        todo!()
++    }
++
++    fn gen_args(_args: Vec<ArgPair>) -> Inst {
++        todo!()
++    }
++
++    fn gen_rets(_rets: Vec<RetPair>) -> Inst {
++        todo!()
++    }
++
++    fn gen_add_imm(
++        _call_conv: isa::CallConv,
++        _into_reg: Writable<Reg>,
++        _from_reg: Reg,
++        _imm: u32,
++    ) -> SmallInstVec<Inst> {
++        todo!()
++    }
++
++    fn gen_stack_lower_bound_trap(_limit_reg: Reg) -> SmallInstVec<Inst> {
++        todo!()
++    }
++
++    fn gen_get_stack_addr(_mem: StackAMode, _into_reg: Writable<Reg>) -> Inst {
++        todo!()
++    }
++
++    fn get_stacklimit_reg(_call_conv: isa::CallConv) -> Reg {
++        todo!()
++    }
++
++    fn gen_load_base_offset(_into_reg: Writable<Reg>, _base: Reg, _offset: i32, _ty: Type) -> Inst {
++        todo!()
++    }
++
++    fn gen_store_base_offset(_base: Reg, _offset: i32, _from_reg: Reg, _ty: Type) -> Inst {
++        todo!()
++    }
++
++    fn gen_sp_reg_adjust(_amount: i32) -> SmallInstVec<Inst> {
++        todo!()
++    }
++
++    fn compute_frame_layout(
++        _call_conv: isa::CallConv,
++        _flags: &settings::Flags,
++        _sig: &Signature,
++        _regs: &[Writable<RealReg>],
++        _function_calls: FunctionCalls,
++        _incoming_args_size: u32,
++        _tail_args_size: u32,
++        _stackslots_size: u32,
++        _fixed_frame_storage_size: u32,
++        _outgoing_args_size: u32,
++    ) -> FrameLayout {
++        todo!()
++    }
++
++    fn gen_prologue_frame_setup(
++        _call_conv: isa::CallConv,
++        _flags: &settings::Flags,
++        _isa_flags: &Self::F,
++        _frame_layout: &FrameLayout,
++    ) -> SmallInstVec<Inst> {
++        todo!()
++    }
++
++    fn gen_epilogue_frame_restore(
++        _call_conv: isa::CallConv,
++        _flags: &settings::Flags,
++        _isa_flags: &Self::F,
++        _frame_layout: &FrameLayout,
++    ) -> SmallInstVec<Inst> {
++        todo!()
++    }
++
++    fn gen_return(
++        _call_conv: isa::CallConv,
++        _isa_flags: &Self::F,
++        _frame_layout: &FrameLayout,
++    ) -> SmallInstVec<Inst> {
++        todo!()
++    }
++
++    fn gen_probestack(_insts: &mut SmallInstVec<Inst>, _frame_size: u32) {
++        todo!()
++    }
++
++    fn gen_inline_probestack(
++        _insts: &mut SmallInstVec<Inst>,
++        _call_conv: isa::CallConv,
++        _frame_size: u32,
++        _guard_size: u32,
++    ) {
++        todo!()
++    }
++
++    fn gen_clobber_save(
++        _call_conv: isa::CallConv,
++        _flags: &settings::Flags,
++        _frame_layout: &FrameLayout,
++    ) -> SmallVec<[Inst; 16]> {
++        todo!()
++    }
++
++    fn gen_clobber_restore(
++        _call_conv: isa::CallConv,
++        _flags: &settings::Flags,
++        _frame_layout: &FrameLayout,
++    ) -> SmallVec<[Inst; 16]> {
++        todo!()
++    }
++
++    fn gen_memcpy<F: FnMut(Type) -> Writable<Reg>>(
++        _call_conv: isa::CallConv,
++        _dst: Reg,
++        _src: Reg,
++        _size: usize,
++        _alloc_tmp: F,
++    ) -> SmallVec<[Inst; 8]> {
++        todo!()
++    }
++
++    fn get_number_of_spillslots_for_value(
++        _rc: RegClass,
++        _target_vector_bytes: u32,
++        _isa_flags: &Self::F,
++    ) -> u32 {
++        todo!()
++    }
++
++    fn get_machine_env(_flags: &settings::Flags, _call_conv: isa::CallConv) -> &MachineEnv {
++        todo!()
++    }
++
++    fn get_regs_clobbered_by_call(
++        _call_conv_of_callee: isa::CallConv,
++        _is_exception: bool,
++    ) -> PRegSet {
++        todo!()
++    }
++
++    fn get_ext_mode(
++        _call_conv: isa::CallConv,
++        _specified: ir::ArgumentExtension,
++        _location: ABIArgLocation,
++    ) -> ir::ArgumentExtension {
++        todo!()
++    }
++
++    fn retval_temp_reg(_call_conv_of_callee: isa::CallConv) -> Writable<Reg> {
++        todo!()
++    }
++}
+diff --git a/cranelift/codegen/src/isa/bpf/inst/mod.rs b/cranelift/codegen/src/isa/bpf/inst/mod.rs
+index 3917692..cc16ffe 100644
+--- a/cranelift/codegen/src/isa/bpf/inst/mod.rs
++++ b/cranelift/codegen/src/isa/bpf/inst/mod.rs
+@@ -1,3 +1,188 @@
+ //! This module defines BPF-specific machine instruction types.
+ 
+ pub mod regs;
++
++use super::abi::BpfMachineDeps;
++use crate::binemit::{Addend, CodeOffset, Reloc};
++use crate::ir::{self, Type};
++use crate::isa::FunctionAlignment;
++use crate::machinst::*;
++use crate::result::CodegenResult;
++use alloc::string::String;
++use alloc::vec::Vec;
++use cranelift_control::ControlPlane;
++
++pub use crate::isa::bpf::lower::isle::generated_code::MInst as Inst;
++
++/// What emission needs that is fixed for a whole function.
++#[derive(Clone)]
++pub struct EmitInfo;
++
++/// The state carried between `emit` calls.
++#[derive(Default, Clone, Debug)]
++pub struct EmitState {
++    frame_layout: FrameLayout,
++    ctrl_plane: ControlPlane,
++}
++
++impl MachInstEmitState<Inst> for EmitState {
++    fn new(_abi: &Callee<BpfMachineDeps>, _ctrl_plane: ControlPlane) -> Self {
++        todo!()
++    }
++
++    fn pre_safepoint(&mut self, _user_stack_map: Option<ir::UserStackMap>) {
++        todo!()
++    }
++
++    fn ctrl_plane_mut(&mut self) -> &mut ControlPlane {
++        &mut self.ctrl_plane
++    }
++
++    fn take_ctrl_plane(self) -> ControlPlane {
++        self.ctrl_plane
++    }
++
++    fn frame_layout(&self) -> &FrameLayout {
++        &self.frame_layout
++    }
++}
++
++impl MachInst for Inst {
++    type ABIMachineSpec = BpfMachineDeps;
++    type LabelUse = LabelUse;
++
++    /// Undecided: the encoding a deferred trap gets is its own question.
++    const TRAP_OPCODE: &'static [u8] = &[];
++
++    fn get_operands(&mut self, _collector: &mut impl OperandVisitor) {
++        todo!()
++    }
++
++    fn is_move(&self) -> Option<(Writable<Reg>, Reg)> {
++        todo!()
++    }
++
++    fn is_term(&self) -> MachTerminator {
++        todo!()
++    }
++
++    fn is_trap(&self) -> bool {
++        todo!()
++    }
++
++    fn is_args(&self) -> bool {
++        todo!()
++    }
++
++    fn call_type(&self) -> CallType {
++        todo!()
++    }
++
++    fn is_included_in_clobbers(&self) -> bool {
++        todo!()
++    }
++
++    fn is_mem_access(&self) -> bool {
++        todo!()
++    }
++
++    fn gen_move(_to_reg: Writable<Reg>, _from_reg: Reg, _ty: Type) -> Inst {
++        todo!()
++    }
++
++    fn gen_dummy_use(_reg: Reg) -> Inst {
++        todo!()
++    }
++
++    fn gen_jump(_target: MachLabel) -> Inst {
++        todo!()
++    }
++
++    fn gen_nop(_preferred_size: usize) -> Inst {
++        todo!()
++    }
++
++    fn gen_nop_units() -> Vec<Vec<u8>> {
++        todo!()
++    }
++
++    fn rc_for_type(_ty: &Type) -> CodegenResult<(&'static [RegClass], &'static [Type])> {
++        todo!()
++    }
++
++    fn canonical_type_for_rc(_rc: RegClass) -> Type {
++        todo!()
++    }
++
++    fn worst_case_size() -> CodeOffset {
++        todo!()
++    }
++
++    fn worst_case_island_growth() -> CodeOffset {
++        todo!()
++    }
++
++    fn is_safepoint(&self) -> bool {
++        todo!()
++    }
++
++    fn function_alignment() -> FunctionAlignment {
++        todo!()
++    }
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum LabelUse {}
++
++impl MachInstLabelUse for LabelUse {
++    const ALIGN: CodeOffset = 8;
++
++    fn max_pos_range(self) -> CodeOffset {
++        todo!()
++    }
++
++    fn max_neg_range(self) -> CodeOffset {
++        todo!()
++    }
++
++    fn patch_size(self) -> CodeOffset {
++        todo!()
++    }
++
++    fn patch(self, _buffer: &mut [u8], _use_offset: CodeOffset, _label_offset: CodeOffset) {
++        todo!()
++    }
++
++    fn supports_veneer(self) -> bool {
++        todo!()
++    }
++
++    fn veneer_size(self) -> CodeOffset {
++        todo!()
++    }
++
++    fn worst_case_veneer_size() -> CodeOffset {
++        todo!()
++    }
++
++    fn generate_veneer(self, _buffer: &mut [u8], _veneer_offset: CodeOffset) -> (CodeOffset, Self) {
++        todo!()
++    }
++
++    fn from_reloc(_reloc: Reloc, _addend: Addend) -> Option<Self> {
++        todo!()
++    }
++}
++
++impl MachInstEmit for Inst {
++    type State = EmitState;
++    type Info = EmitInfo;
++
++    fn emit(&self, _code: &mut MachBuffer<Inst>, _info: &EmitInfo, _state: &mut EmitState) {
++        todo!()
++    }
++
++    fn pretty_print_inst(&self, _state: &mut EmitState) -> String {
++        todo!()
++    }
++}
+diff --git a/cranelift/codegen/src/isa/bpf/lower/isle.rs b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+index 83af6ee..d4f2e69 100644
+--- a/cranelift/codegen/src/isa/bpf/lower/isle.rs
++++ b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+@@ -2,14 +2,45 @@
+ 
+ // Pull in the ISLE generated code.
+ pub mod generated_code;
++use generated_code::MInst;
+ 
+ // Types that the generated ISLE code uses via `use super::*`.
+ use crate::ir::condcodes::*;
+ use crate::ir::immediates::*;
++use crate::ir::types::*;
+ use crate::ir::*;
++use crate::isa::bpf::BpfBackend;
+ use crate::machinst::isle::*;
+-use crate::machinst::{CallArgList, CallRetList, InstOutput, MachLabel, Reg, VCodeConstant};
++use crate::machinst::{
++    CallArgList, CallRetList, InstOutput, Lower, MachInst, MachLabel, Reg, VCodeConstant,
++    VCodeConstantData,
++};
+ use alloc::boxed::Box;
++use alloc::vec::Vec;
+ use regalloc2::PReg;
+ 
+ type BoxExternalName = Box<ExternalName>;
++
++pub(crate) struct BpfIsleContext<'a, 'b> {
++    lower_ctx: &'a mut Lower<'b, MInst>,
++    backend: &'a BpfBackend,
++}
++
++impl<'a, 'b> BpfIsleContext<'a, 'b> {
++    fn new(lower_ctx: &'a mut Lower<'b, MInst>, backend: &'a BpfBackend) -> Self {
++        Self { lower_ctx, backend }
++    }
++
++    pub(crate) fn dfg(&self) -> &DataFlowGraph {
++        &self.lower_ctx.f.dfg
++    }
++}
++
++impl generated_code::Context for BpfIsleContext<'_, '_> {
++    isle_lower_prelude_methods!();
++
++    #[inline]
++    fn emit(&mut self, inst: &MInst) -> Unit {
++        self.lower_ctx.emit(inst.clone());
++    }
++}
+diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
+index 5e542dd..fbdd7bd 100644
+--- a/cranelift/codegen/src/isa/bpf/mod.rs
++++ b/cranelift/codegen/src/isa/bpf/mod.rs
+@@ -1,5 +1,6 @@
+ //! BPF Instruction Set Architecture.
+ 
++mod abi;
+ mod inst;
+ mod lower;
+ pub mod settings;

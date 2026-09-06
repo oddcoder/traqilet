@@ -25,14 +25,14 @@ problem becomes a register allocator problem.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/inst.isle | 40 ++++++++++++++++++++++++-
- 1 file changed, 39 insertions(+), 1 deletion(-)
+ cranelift/codegen/src/isa/bpf/inst.isle | 64 ++++++++++++++++++++++++-
+ 1 file changed, 63 insertions(+), 1 deletion(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index b305c30..4d89f25 100644
+index b305c30..eed609c 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
-@@ -1,8 +1,46 @@
+@@ -1,10 +1,68 @@
  ;; BPF machine instructions.
  
 +;; RFC 9669 table 5. Neg, Mov, Movsx and End are handled separately.
@@ -79,4 +79,26 @@ index b305c30..4d89f25 100644
 +        (End64 (width EndWidth) (rd WritableReg) (rs Reg))
      ))
  
++;;;; Instruction constructors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(decl alu (AluOp AluClass Reg AluSource) Reg)
++(rule (alu op class rs1 src)
++    (let ((rd WritableReg (temp_writable_reg $I64))
++          (_ Unit (emit (MInst.Alu op class rd rs1 src))))
++        rd))
++
++(decl alu_x (AluOp AluClass Reg Reg) Reg)
++(rule (alu_x op class rs1 rs2) (alu op class rs1 (AluSource.X rs2)))
++
++(decl alu_k (AluOp AluClass Reg i32) Reg)
++(rule (alu_k op class rs1 imm) (alu op class rs1 (AluSource.K imm)))
++
++(decl alu_neg (AluClass Reg) Reg)
++(rule (alu_neg class rs)
++    (let ((rd WritableReg (temp_writable_reg $I64))
++          (_ Unit (emit (MInst.Neg class rd rs))))
++        rd))
++
  (decl pure has_base64 () bool)
+ (extern constructor has_base64 has_base64)
+ 

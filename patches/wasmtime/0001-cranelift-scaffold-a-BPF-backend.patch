@@ -12,15 +12,15 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  cranelift/codegen/meta/src/isa/bpf.rs             |  6 ++++++
  cranelift/codegen/meta/src/isa/mod.rs             |  6 ++++++
  cranelift/codegen/meta/src/isle.rs                | 13 +++++++++++++
- cranelift/codegen/src/isa/bpf/inst.isle           |  3 +++
+ cranelift/codegen/src/isa/bpf/inst.isle           |  6 ++++++
  cranelift/codegen/src/isa/bpf/lower.isle          |  1 +
  cranelift/codegen/src/isa/bpf/lower.rs            |  4 ++++
  cranelift/codegen/src/isa/bpf/lower/isle.rs       | 15 +++++++++++++++
- .../src/isa/bpf/lower/isle/generated_code.rs      | 11 +++++++++++
+ .../src/isa/bpf/lower/isle/generated_code.rs      | 10 ++++++++++
  cranelift/codegen/src/isa/bpf/mod.rs              |  4 ++++
  cranelift/codegen/src/isa/bpf/settings.rs         | 13 +++++++++++++
  cranelift/codegen/src/isa/mod.rs                  |  3 +++
- 12 files changed, 81 insertions(+), 1 deletion(-)
+ 12 files changed, 83 insertions(+), 1 deletion(-)
  create mode 100644 cranelift/codegen/meta/src/isa/bpf.rs
  create mode 100644 cranelift/codegen/src/isa/bpf/inst.isle
  create mode 100644 cranelift/codegen/src/isa/bpf/lower.isle
@@ -148,13 +148,16 @@ index 6f39a34..c3b4e7e 100644
  }
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
 new file mode 100644
-index 0000000..dde3890
+index 0000000..02f54f7
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
-@@ -0,0 +1,3 @@
+@@ -0,0 +1,6 @@
 +;; BPF machine instructions.
 +
-+(type MInst (enum ))
++(type MInst
++    (enum
++        (Placeholder)
++    ))
 diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
 new file mode 100644
 index 0000000..4a30b40
@@ -195,13 +198,12 @@ index 0000000..83af6ee
 +type BoxExternalName = Box<ExternalName>;
 diff --git a/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs b/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
 new file mode 100644
-index 0000000..92f444c
+index 0000000..2746546
 --- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/lower/isle/generated_code.rs
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,10 @@
 +#![expect(
 +    dead_code,
-+    unreachable_code,
 +    unreachable_patterns,
 +    unused_imports,
 +    unused_variables,

@@ -14,11 +14,12 @@ rustc hapy.
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
  cranelift/codegen/src/isa/bpf/abi.rs        | 215 ++++++++++++++++++++
- cranelift/codegen/src/isa/bpf/inst/mod.rs   | 185 +++++++++++++++++
+ cranelift/codegen/src/isa/bpf/inst/mod.rs   | 186 +++++++++++++++++
  cranelift/codegen/src/isa/bpf/lower/isle.rs |  33 ++-
- cranelift/codegen/src/isa/bpf/mod.rs        |   1 +
- 4 files changed, 433 insertions(+), 1 deletion(-)
+ cranelift/codegen/src/isa/bpf/mod.rs        |   2 +
+ 4 files changed, 435 insertions(+), 1 deletion(-)
  create mode 100644 cranelift/codegen/src/isa/bpf/abi.rs
+ create mode 100644 cranelift/codegen/src/isa/bpf/inst/mod.rs
 
 diff --git a/cranelift/codegen/src/isa/bpf/abi.rs b/cranelift/codegen/src/isa/bpf/abi.rs
 new file mode 100644
@@ -242,13 +243,12 @@ index 0000000..67b4601
 +    }
 +}
 diff --git a/cranelift/codegen/src/isa/bpf/inst/mod.rs b/cranelift/codegen/src/isa/bpf/inst/mod.rs
-index 3917692..cc16ffe 100644
---- a/cranelift/codegen/src/isa/bpf/inst/mod.rs
+new file mode 100644
+index 0000000..766a01e
+--- /dev/null
 +++ b/cranelift/codegen/src/isa/bpf/inst/mod.rs
-@@ -1,3 +1,188 @@
- //! This module defines BPF-specific machine instruction types.
- 
- pub mod regs;
+@@ -0,0 +1,186 @@
++//! This module defines BPF-specific machine instruction types.
 +
 +use super::abi::BpfMachineDeps;
 +use crate::binemit::{Addend, CodeOffset, Reloc};
@@ -486,13 +486,14 @@ index 83af6ee..d4f2e69 100644
 +    }
 +}
 diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
-index 5e542dd..fbdd7bd 100644
+index 52552f4..fbdd7bd 100644
 --- a/cranelift/codegen/src/isa/bpf/mod.rs
 +++ b/cranelift/codegen/src/isa/bpf/mod.rs
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,7 @@
  //! BPF Instruction Set Architecture.
  
 +mod abi;
- mod inst;
++mod inst;
  mod lower;
  pub mod settings;
+ 

@@ -5,22 +5,23 @@ Subject: [PATCH] cranelift: define the BPF register file
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/inst/mod.rs  |  3 +
+ cranelift/codegen/src/isa/bpf/inst/mod.rs  |  2 +
  cranelift/codegen/src/isa/bpf/inst/regs.rs | 71 ++++++++++++++++++++++
- cranelift/codegen/src/isa/bpf/mod.rs       |  1 +
- 3 files changed, 75 insertions(+)
- create mode 100644 cranelift/codegen/src/isa/bpf/inst/mod.rs
+ 2 files changed, 73 insertions(+)
  create mode 100644 cranelift/codegen/src/isa/bpf/inst/regs.rs
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst/mod.rs b/cranelift/codegen/src/isa/bpf/inst/mod.rs
-new file mode 100644
-index 0000000..3917692
---- /dev/null
+index 766a01e..cc16ffe 100644
+--- a/cranelift/codegen/src/isa/bpf/inst/mod.rs
 +++ b/cranelift/codegen/src/isa/bpf/inst/mod.rs
-@@ -0,0 +1,3 @@
-+//! This module defines BPF-specific machine instruction types.
-+
+@@ -1,5 +1,7 @@
+ //! This module defines BPF-specific machine instruction types.
+ 
 +pub mod regs;
++
+ use super::abi::BpfMachineDeps;
+ use crate::binemit::{Addend, CodeOffset, Reloc};
+ use crate::ir::{self, Type};
 diff --git a/cranelift/codegen/src/isa/bpf/inst/regs.rs b/cranelift/codegen/src/isa/bpf/inst/regs.rs
 new file mode 100644
 index 0000000..a22d01b
@@ -98,14 +99,3 @@ index 0000000..a22d01b
 +        scratch_by_class: [None, None, None],
 +    }
 +}
-diff --git a/cranelift/codegen/src/isa/bpf/mod.rs b/cranelift/codegen/src/isa/bpf/mod.rs
-index 52552f4..5e542dd 100644
---- a/cranelift/codegen/src/isa/bpf/mod.rs
-+++ b/cranelift/codegen/src/isa/bpf/mod.rs
-@@ -1,5 +1,6 @@
- //! BPF Instruction Set Architecture.
- 
-+mod inst;
- mod lower;
- pub mod settings;
- 

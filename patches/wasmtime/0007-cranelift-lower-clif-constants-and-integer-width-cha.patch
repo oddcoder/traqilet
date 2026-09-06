@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Sun, 6 Sep 2026 21:58:36 +0000
+Subject: [PATCH] cranelift: lower clif constants and integer width changes
+
+RFC 9669 table 5 groups MOV with the arithmetic, but what lowers to it
+is unrelated: a constant, a widening, and a narrowing. Implement all 3.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/lower.isle | 47 ++++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
+diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
+index 4a30b40..10f1e4f 100644
+--- a/cranelift/codegen/src/isa/bpf/lower.isle
++++ b/cranelift/codegen/src/isa/bpf/lower.isle
+@@ -1 +1,48 @@
+ ;; BPF instruction selection: CLIF-to-MachInst lowering.
++
++(decl partial lower (Inst) InstOutput)
++
++;;;; Conformance group gates ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; TODO: emulate 64 bit ISA on 32 bit? not sure of how relevant is that. Even
++;;       LLVM does not support that.
++(decl partial alu_class (Type) AluClass)
++(rule (alu_class $I32) (AluClass.Alu32))
++(rule (alu_class $I64) (if-let true (has_base64)) (AluClass.Alu64))
++
++;;;; Rules for `iconst` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; TODO: handle the other cases.
++(rule (lower (iconst ty c))
++    (if-let (i32_from_i64 imm) (i64_sextend_imm64 ty c))
++    (mov_k (alu_class ty) imm))
++
++;;;; Rules for `ireduce` and `uextend` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++
++;; Every register holds 64 bits, so a value of a narrower type has unused bits,
++;; An `i8` is its low 8 bits, bits 8 through 63 may be anything.
++;;
++;; Narrowing throws bits away by doing nothing at all. The register the value
++;; already sits in contains the bits that matter.
++;;
++;; As for widening, every bit of the result means something, so the bits that
++;; the narrower was leaving undefined "have" to be made zero, and that takes an
++;; instruction.
++;;
++;; What to keep in mind is that we do not mask when narrowing. So, a narrow
++;; value cannot be read as a wide one. Anything looking above a value's own
++;; type(a compare or a divide) must widen first.
++
++
++(rule (lower (ireduce _ x))
++    (value_regs_get x 0))
++
++(rule (lower (uextend _ x @ (value_type $I8)))
++    (alu_k (AluOp.And) (AluClass.Alu64) x 0xff))
++
++(rule (lower (uextend _ x @ (value_type $I16)))
++    (alu_k (AluOp.And) (AluClass.Alu64) x 0xffff))
++
++(rule (lower (uextend $I64 x @ (value_type $I32)))
++    (mov_x (AluClass.Alu32) x))

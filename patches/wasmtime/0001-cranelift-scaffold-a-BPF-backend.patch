@@ -31,10 +31,10 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  create mode 100644 cranelift/codegen/src/isa/bpf/settings.rs
 
 diff --git a/cranelift/codegen/Cargo.toml b/cranelift/codegen/Cargo.toml
-index fe6c913..d982c76 100644
+index ae4afc0..39e0750 100644
 --- a/cranelift/codegen/Cargo.toml
 +++ b/cranelift/codegen/Cargo.toml
-@@ -95,6 +95,7 @@ x86 = []
+@@ -94,6 +94,7 @@ x86 = []
  arm64 = []
  s390x = []
  riscv64 = []
@@ -42,7 +42,7 @@ index fe6c913..d982c76 100644
  pulley = [
      "dep:pulley-interpreter",
      "pulley-interpreter/encode",
-@@ -105,7 +106,7 @@ pulley = [
+@@ -104,7 +105,7 @@ pulley = [
  host-arch = []
  
  # Option to enable all architectures.

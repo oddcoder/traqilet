@@ -8,14 +8,14 @@ is unrelated: a constant, a widening, and a narrowing. Implement all 3.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/lower.isle | 47 ++++++++++++++++++++++++
- 1 file changed, 47 insertions(+)
+ cranelift/codegen/src/isa/bpf/lower.isle | 49 ++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
 
 diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
-index 4a30b40..10f1e4f 100644
+index 4a30b40..b6fc3f0 100644
 --- a/cranelift/codegen/src/isa/bpf/lower.isle
 +++ b/cranelift/codegen/src/isa/bpf/lower.isle
-@@ -1 +1,48 @@
+@@ -1 +1,50 @@
  ;; BPF instruction selection: CLIF-to-MachInst lowering.
 +
 +(decl partial lower (Inst) InstOutput)
@@ -24,16 +24,18 @@ index 4a30b40..10f1e4f 100644
 +
 +;; TODO: emulate 64 bit ISA on 32 bit? not sure of how relevant is that. Even
 +;;       LLVM does not support that.
-+(decl partial alu_class (Type) AluClass)
-+(rule (alu_class $I32) (AluClass.Alu32))
-+(rule (alu_class $I64) (if-let true (has_base64)) (AluClass.Alu64))
++(decl partial mov_alu_class (Type) AluClass)
++(rule (mov_alu_class $I8) (AluClass.Alu32))
++(rule (mov_alu_class $I16) (AluClass.Alu32))
++(rule (mov_alu_class $I32) (AluClass.Alu32))
++(rule (mov_alu_class $I64) (if-let true (has_base64)) (AluClass.Alu64))
 +
 +;;;; Rules for `iconst` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 +
 +;; TODO: handle the other cases.
 +(rule (lower (iconst ty c))
 +    (if-let (i32_from_i64 imm) (i64_sextend_imm64 ty c))
-+    (mov_k (alu_class ty) imm))
++    (mov_k (mov_alu_class ty) imm))
 +
 +;;;; Rules for `ireduce` and `uextend` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 +

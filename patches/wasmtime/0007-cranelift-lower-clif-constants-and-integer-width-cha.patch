@@ -12,7 +12,7 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  1 file changed, 49 insertions(+)
 
 diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
-index 4a30b40..b6fc3f0 100644
+index 4a30b40..bf42713 100644
 --- a/cranelift/codegen/src/isa/bpf/lower.isle
 +++ b/cranelift/codegen/src/isa/bpf/lower.isle
 @@ -1 +1,50 @@
@@ -58,10 +58,10 @@ index 4a30b40..b6fc3f0 100644
 +(rule (lower (ireduce _ x))
 +    (value_regs_get x 0))
 +
-+(rule (lower (uextend _ x @ (value_type $I8)))
++(rule (lower (uextend (fits_in_64 _) x @ (value_type $I8)))
 +    (alu_k (AluOp.And) (AluClass.Alu64) x 0xff))
 +
-+(rule (lower (uextend _ x @ (value_type $I16)))
++(rule (lower (uextend (fits_in_64 _) x @ (value_type $I16)))
 +    (alu_k (AluOp.And) (AluClass.Alu64) x 0xffff))
 +
 +(rule (lower (uextend $I64 x @ (value_type $I32)))

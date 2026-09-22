@@ -8,14 +8,14 @@ is unrelated: a constant, a widening, and a narrowing. Implement all 3.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/lower.isle | 49 ++++++++++++++++++++++++
- 1 file changed, 49 insertions(+)
+ cranelift/codegen/src/isa/bpf/lower.isle | 52 ++++++++++++++++++++++++
+ 1 file changed, 52 insertions(+)
 
 diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
-index 4a30b40..bf42713 100644
+index 4a30b40..8306050 100644
 --- a/cranelift/codegen/src/isa/bpf/lower.isle
 +++ b/cranelift/codegen/src/isa/bpf/lower.isle
-@@ -1 +1,50 @@
+@@ -1 +1,53 @@
  ;; BPF instruction selection: CLIF-to-MachInst lowering.
 +
 +(decl partial lower (Inst) InstOutput)
@@ -32,10 +32,13 @@ index 4a30b40..bf42713 100644
 +
 +;;;; Rules for `iconst` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 +
-+;; TODO: handle the other cases.
-+(rule (lower (iconst ty c))
++(rule 1 (lower (iconst ty c))
 +    (if-let (i32_from_i64 imm) (i64_sextend_imm64 ty c))
 +    (mov_k (mov_alu_class ty) imm))
++
++(rule 0 (lower (iconst $I64 (u64_from_imm64 imm)))
++    (if-let true (has_base64))
++    (load_imm64 imm))
 +
 +;;;; Rules for `ireduce` and `uextend` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 +

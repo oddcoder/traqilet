@@ -11,7 +11,7 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  1 file changed, 31 insertions(+)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index 447f928..6063d5f 100644
+index 9e69215..c2fcf49 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
 @@ -22,6 +22,25 @@
@@ -50,8 +50,8 @@ index 447f928..6063d5f 100644
      ))
  
  ;;;; Instruction constructors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-@@ -75,6 +97,15 @@
-           (_ Unit (emit (MInst.Neg class rd rs))))
+@@ -81,6 +103,15 @@
+           (_ Unit (emit (MInst.MovSX class size rd rs))))
          rd))
  
 +(decl load_wide (WideImm) Reg)

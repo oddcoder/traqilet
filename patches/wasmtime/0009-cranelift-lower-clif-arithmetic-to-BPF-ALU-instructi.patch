@@ -1,0 +1,165 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Fri, 4 Sep 2026 08:51:00 +0000
+Subject: [PATCH] cranelift: lower clif arithmetic to BPF ALU instructions
+
+Lower `iadd`, `isub`, `ineg`, `imul`, bitwise, and shift operations in
+both register and immediate forms.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/lower.isle | 137 +++++++++++++++++++++++
+ 1 file changed, 137 insertions(+)
+
+diff --git a/cranelift/codegen/src/isa/bpf/lower.isle b/cranelift/codegen/src/isa/bpf/lower.isle
+index 0aecf9b..b51b8f3 100644
+--- a/cranelift/codegen/src/isa/bpf/lower.isle
++++ b/cranelift/codegen/src/isa/bpf/lower.isle
+@@ -12,6 +12,12 @@
+ (rule (alu_class $I32) (AluClass.Alu32))
+ (rule (alu_class $I64) (if-let true (has_base64)) (AluClass.Alu64))
+ 
++(decl partial divmul_class (Type) AluClass)
++(rule (divmul_class $I8) (if-let true (has_divmul32)) (AluClass.Alu32))
++(rule (divmul_class $I16) (if-let true (has_divmul32)) (AluClass.Alu32))
++(rule (divmul_class $I32) (if-let true (has_divmul32)) (AluClass.Alu32))
++(rule (divmul_class $I64) (if-let true (has_divmul64)) (AluClass.Alu64))
++
+ ;;;; Rules for `iconst` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (rule 1 (lower (iconst ty c))
+@@ -51,3 +57,134 @@
+ 
+ (rule (lower (uextend $I64 x @ (value_type $I32)))
+     (mov_x (AluClass.Alu32) x))
++;;;; Rules for `iadd` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(rule 0 (lower (iadd ty x y))
++    (alu_x (AluOp.Add) (alu_class ty) x y))
++
++(rule 1 (lower (iadd ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Add) (alu_class ty) x imm))
++
++(rule 2 (lower (iadd ty (i32_from_iconst imm) y))
++    (alu_k (AluOp.Add) (alu_class ty) y imm))
++
++;;;; Rules for `isub` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(rule 0 (lower (isub ty x y))
++    (alu_x (AluOp.Sub) (alu_class ty) x y))
++
++(rule 1 (lower (isub ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Sub) (alu_class ty) x imm))
++
++;;;; Rules for `ineg` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(rule (lower (ineg ty x))
++    (alu_neg (alu_class ty) x))
++
++;;;; Rules for `imul` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(rule 0 (lower (imul ty x y))
++    (alu_x (AluOp.Mul) (divmul_class ty) x y))
++
++(rule 1 (lower (imul ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Mul) (divmul_class ty) x imm))
++
++(rule 2 (lower (imul ty (i32_from_iconst imm) y))
++    (alu_k (AluOp.Mul) (divmul_class ty) y imm))
++
++;;;; Rules for `bnot` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; RFC 9669 table 5 has no NOT. `imm` sign extends, so -1 inverts every bit.
++(rule (lower (bnot ty x))
++    (alu_k (AluOp.Xor) (alu_class ty) x -1))
++
++;;;; Rules for `band` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(rule 0 (lower (band ty x y))
++    (alu_x (AluOp.And) (alu_class ty) x y))
++
++(rule 1 (lower (band ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.And) (alu_class ty) x imm))
++
++(rule 2 (lower (band ty (i32_from_iconst imm) y))
++    (alu_k (AluOp.And) (alu_class ty) y imm))
++
++;;;; Rules for `bor` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(rule 0 (lower (bor ty x y))
++    (alu_x (AluOp.Or) (alu_class ty) x y))
++
++(rule 1 (lower (bor ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Or) (alu_class ty) x imm))
++
++(rule 2 (lower (bor ty (i32_from_iconst imm) y))
++    (alu_k (AluOp.Or) (alu_class ty) y imm))
++
++;;;; Rules for `bxor` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(rule 0 (lower (bxor ty x y))
++    (alu_x (AluOp.Xor) (alu_class ty) x y))
++
++(rule 1 (lower (bxor ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Xor) (alu_class ty) x imm))
++
++(rule 2 (lower (bxor ty (i32_from_iconst imm) y))
++    (alu_k (AluOp.Xor) (alu_class ty) y imm))
++
++;;;; Rules for `ishl` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; Clif defines a shift of a B-bit value by `y` as a shift by `y mod B`.
++;; `ishl.i8 x, 9` is `x << 1` and `ishl.i8 x, 8` is `x`.
++;;
++;; RFC 9669 table 5 wraps the amount at the class width instead: 0x1f for ALU,
++;; 0x3f for ALU64. For `i32` and `i64` the class is the type, so the two rules
++;; agree and nothing needs doing. For `i8` and `i16` they disagree: BPF's
++;; narrowest class still wraps at 32, so `w_x <<= 8` shifts by 8 while clif
++;; wanted `x`.
++
++(decl partial shift_amount (Type Value) Reg)
++(rule (shift_amount $I8 y) (alu_k (AluOp.And) (AluClass.Alu32) y 7))
++(rule (shift_amount $I16 y) (alu_k (AluOp.And) (AluClass.Alu32) y 15))
++
++(rule 0 (lower (ishl ty x y))
++    (alu_x (AluOp.Lsh) (alu_class ty) x y))
++
++(rule 1 (lower (ishl ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Lsh) (alu_class ty) x imm))
++
++(rule 2 (lower (ishl (ty_8_or_16 ty) x y))
++    (alu_x (AluOp.Lsh) (AluClass.Alu32) x (shift_amount ty y)))
++
++;;;; Rules for `ushr` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; Shifting right brings the bits above the type down into it, so first they are
++;; made what the type says they are: zero here, the sign bit repeated below.
++(decl partial narrow_zext (Type Value) Reg)
++(rule (narrow_zext $I8 x) (alu_k (AluOp.And) (AluClass.Alu32) x 0xff))
++(rule (narrow_zext $I16 x) (alu_k (AluOp.And) (AluClass.Alu32) x 0xffff))
++
++(rule 0 (lower (ushr ty x y))
++    (alu_x (AluOp.Rsh) (alu_class ty) x y))
++
++(rule 1 (lower (ushr ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Rsh) (alu_class ty) x imm))
++
++(rule 2 (lower (ushr (ty_8_or_16 ty) x y))
++    (alu_x (AluOp.Rsh) (AluClass.Alu32) (narrow_zext ty x) (shift_amount ty y)))
++
++;;;; Rules for `sshr` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(decl partial narrow_sext (Type Value) Reg)
++(rule (narrow_sext $I8 x) (movsx (AluClass.Alu32) (MovSXSize.S8) x))
++(rule (narrow_sext $I16 x) (movsx (AluClass.Alu32) (MovSXSize.S16) x))
++
++(rule 0 (lower (sshr ty x y))
++    (alu_x (AluOp.Arsh) (alu_class ty) x y))
++
++(rule 1 (lower (sshr ty x (i32_from_iconst imm)))
++    (alu_k (AluOp.Arsh) (alu_class ty) x imm))
++
++(rule 2 (lower (sshr (ty_8_or_16 ty) x y))
++    (alu_x (AluOp.Arsh) (AluClass.Alu32) (narrow_sext ty x) (shift_amount ty y)))
++
++;; TODO: `udiv`, `sdiv`, `urem`, and `srem` requires cmp

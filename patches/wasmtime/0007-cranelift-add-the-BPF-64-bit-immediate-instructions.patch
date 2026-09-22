@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Mon, 21 Sep 2026 23:54:59 +0000
+Subject: [PATCH] cranelift: add the BPF 64-bit immediate instructions
+
+This is later needed to assist with lowering iconst instruction.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/inst.isle | 31 +++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
+index 447f928..6063d5f 100644
+--- a/cranelift/codegen/src/isa/bpf/inst.isle
++++ b/cranelift/codegen/src/isa/bpf/inst.isle
+@@ -22,6 +22,25 @@
+ ;; RFC 9669 table 6. ALU64 case is handled separately by End64.
+ (type EndByteOrder (enum LE BE))
+ 
++;; RFC 9669 table 12.
++(type WideImm
++    (enum
++        ;; dst = (next_imm << 32) | imm
++        (Imm64 (imm u64))
++        ;; dst = map_by_fd(imm)
++        (MapByFd (fd i32))
++        ;; dst = map_val(map_by_fd(imm)) + next_imm
++        (MapValByFd (fd i32) (offset i32))
++        ;; dst = var_addr(imm)
++        (VarAddr (id i32))
++        ;; dst = code_addr(imm), in 64-bit instructions from the next one
++        (CodeAddr (insns i32))
++        ;; dst = map_by_idx(imm)
++        (MapByIdx (idx i32))
++        ;; dst = map_val(map_by_idx(imm)) + next_imm
++        (MapValByIdx (idx i32) (offset i32))
++    ))
++
+ (type MInst
+     (enum
+         ;; RFC 9669 table 5.
+@@ -41,6 +60,9 @@
+ 
+         ;; RFC 9669 table 5 & section 4.2
+         (End64 (width EndWidth) (rd WritableReg) (rs Reg))
++
++        ;; RFC 9669 section 5.4.
++        (LoadImm64 (rd WritableReg) (src WideImm))
+     ))
+ 
+ ;;;; Instruction constructors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@@ -75,6 +97,15 @@
+           (_ Unit (emit (MInst.Neg class rd rs))))
+         rd))
+ 
++(decl load_wide (WideImm) Reg)
++(rule (load_wide src)
++    (let ((rd WritableReg (temp_writable_reg $I64))
++          (_ Unit (emit (MInst.LoadImm64 rd src))))
++        rd))
++
++(decl load_imm64 (u64) Reg)
++(rule (load_imm64 imm) (load_wide (WideImm.Imm64 imm)))
++
+ (decl pure has_base64 () bool)
+ (extern constructor has_base64 has_base64)
+ 

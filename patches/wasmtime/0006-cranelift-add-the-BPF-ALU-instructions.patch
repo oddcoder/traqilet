@@ -25,14 +25,14 @@ problem becomes a register allocator problem.
 
 Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
 ---
- cranelift/codegen/src/isa/bpf/inst.isle | 72 ++++++++++++++++++++++++-
- 1 file changed, 71 insertions(+), 1 deletion(-)
+ cranelift/codegen/src/isa/bpf/inst.isle | 78 ++++++++++++++++++++++++-
+ 1 file changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index b305c30..447f928 100644
+index b305c30..9e69215 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
-@@ -1,10 +1,80 @@
+@@ -1,10 +1,86 @@
  ;; BPF machine instructions.
  
 +;; RFC 9669 table 5. Neg, Mov, Movsx and End are handled separately.
@@ -109,6 +109,12 @@ index b305c30..447f928 100644
 +(rule (alu_neg class rs)
 +    (let ((rd WritableReg (temp_writable_reg $I64))
 +          (_ Unit (emit (MInst.Neg class rd rs))))
++        rd))
++
++(decl movsx (AluClass MovSXSize Reg) Reg)
++(rule (movsx class size rs)
++    (let ((rd WritableReg (temp_writable_reg $I64))
++          (_ Unit (emit (MInst.MovSX class size rd rs))))
 +        rd))
 +
  (decl pure has_base64 () bool)

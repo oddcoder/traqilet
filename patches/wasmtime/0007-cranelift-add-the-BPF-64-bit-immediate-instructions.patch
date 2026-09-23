@@ -11,7 +11,7 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  1 file changed, 31 insertions(+)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index 9e69215..c2fcf49 100644
+index dc3253f..8bc8425 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
 @@ -22,6 +22,25 @@
@@ -39,7 +39,7 @@ index 9e69215..c2fcf49 100644
 +
  (type MInst
      (enum
-         ;; RFC 9669 table 5.
+         ;; RFC 9669 table 5
 @@ -41,6 +60,9 @@
  
          ;; RFC 9669 table 5 & section 4.2

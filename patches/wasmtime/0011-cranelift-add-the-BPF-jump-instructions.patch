@@ -1,0 +1,115 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Wed, 23 Sep 2026 16:58:56 +0000
+Subject: [PATCH] cranelift: add the BPF jump instructions
+
+Implement types for RFC 9669 table 7.
+
+Reference jumps by MachLabel instead of offsets. When lowering
+builds the instruction the blocks are not yet ordered, so the numerical
+offsets are unknown.
+
+Also, Carry two MachLabels in conditional jump instead of one (which
+what ISA defines). This pattern is followed by various ISA implementions
+in cranelift.
+
+Add a Nop despite not being part of RFC 9669 as the layout needs
+padding.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/inst.isle     | 46 +++++++++++++++++++++
+ cranelift/codegen/src/isa/bpf/lower/isle.rs |  5 ++-
+ 2 files changed, 49 insertions(+), 2 deletions(-)
+
+diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
+index b5c7599..a774aa4 100644
+--- a/cranelift/codegen/src/isa/bpf/inst.isle
++++ b/cranelift/codegen/src/isa/bpf/inst.isle
+@@ -22,6 +22,23 @@
+ ;; RFC 9669 table 6. ALU64 case is handled separately by End64.
+ (type EndByteOrder (enum LE BE))
+ 
++;; RFC 9669 table 7. Every row of the table but JA, CALL and EXIT.
++(type Cond (enum Eq Ne Set Gt Ge Lt Le SGt SGe SLt SLe))
++
++;; RFC 9669 table 7, and section 4.3.1 and section 4.3.2
++(type CallKind
++    (enum
++        ;; 0x0: a helper function, by the static id in imm (section 4.3.1)
++        StaticId
++        ;; 0x1: a function in this program, imm slots on from the next
++        ;;      instruction (section 4.3.2)
++        Local
++        ;; 0x2: a helper function, by the BTF id in imm (section 4.3.1)
++        BtfId
++    ))
++
++(type BoxCallInfo (primitive BoxCallInfo))
++
+ ;; RFC 9669 table 12.
+ (type WideImm
+     (enum
+@@ -80,6 +97,25 @@
+ 
+         ;; RFC 9669 section 5.4.
+         (LoadImm64 (rd WritableReg) (src WideImm))
++
++        ;;;; RFC 9669 table 7
++        (Ja (label MachLabel))
++
++        ;; RFC 9669 table 7
++        ;; if rs1 <cond> src goto taken`, else `goto not_taken`
++        (CondJump (cond Cond) (class AluClass)
++            (rs1 Reg) (src AluSource)
++            (taken MachLabel)
++            (not_taken MachLabel))
++
++        ;; RFC 9669 table 7
++        (Call (kind CallKind) (info BoxCallInfo))
++
++        ;; RFC 9669 table 7
++        (Exit)
++
++        ;; RFC 9669 has no nop, so this is a `JA` to the next instruction.
++        (Nop)
+     ))
+ 
+ ;;;; Instruction constructors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@@ -129,6 +165,16 @@
+ (decl load_imm64 (u64) Reg)
+ (rule (load_imm64 imm) (load_wide (WideImm.Imm64 imm)))
+ 
++(decl bpf_ja (MachLabel) SideEffectNoResult)
++(rule (bpf_ja label) (SideEffectNoResult.Inst (MInst.Ja label)))
++
++(decl bpf_cond_jump (Cond AluClass Reg AluSource MachLabel MachLabel) SideEffectNoResult)
++(rule (bpf_cond_jump cond class rs1 src taken not_taken)
++    (SideEffectNoResult.Inst (MInst.CondJump cond class rs1 src taken not_taken)))
++
++(decl bpf_call (CallKind BoxCallInfo) SideEffectNoResult)
++(rule (bpf_call kind info) (SideEffectNoResult.Inst (MInst.Call kind info)))
++
+ (decl pure has_base64 () bool)
+ (extern constructor has_base64 has_base64)
+ 
+diff --git a/cranelift/codegen/src/isa/bpf/lower/isle.rs b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+index 378c1e7..f08a9b2 100644
+--- a/cranelift/codegen/src/isa/bpf/lower/isle.rs
++++ b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+@@ -12,8 +12,8 @@ use crate::ir::*;
+ use crate::isa::bpf::BpfBackend;
+ use crate::machinst::isle::*;
+ use crate::machinst::{
+-    ArgPair, CallArgList, CallRetList, InstOutput, Lower, MachInst, MachLabel, Reg, RetPair,
+-    VCodeConstant, VCodeConstantData,
++    ArgPair, CallArgList, CallInfo, CallRetList, InstOutput, Lower, MachInst, MachLabel, Reg,
++    RetPair, VCodeConstant, VCodeConstantData,
+ };
+ use alloc::boxed::Box;
+ use alloc::vec::Vec;
+@@ -66,3 +66,4 @@ impl generated_code::Context for BpfIsleContext<'_, '_> {
+ }
+ type VecArgPair = Vec<ArgPair>;
+ type VecRetPair = Vec<RetPair>;
++type BoxCallInfo = Box<CallInfo<ExternalName>>;

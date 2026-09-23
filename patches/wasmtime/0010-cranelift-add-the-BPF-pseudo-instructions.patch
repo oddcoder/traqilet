@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Wed, 23 Sep 2026 16:58:13 +0000
+Subject: [PATCH] cranelift: add the BPF pseudo-instructions
+
+The MachInst trait, implemented later in the series, has three methods
+that build an instruction the register allocator needs to see but the
+machine never runs: gen_args, gen_rets and gen_dummy_use. Each needs a
+variant to return, so this patch defines the three. They encode to
+nothing.
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/inst.isle     | 17 +++++++++++++++++
+ cranelift/codegen/src/isa/bpf/lower/isle.rs |  6 ++++--
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
+index c2fcf49..b5c7599 100644
+--- a/cranelift/codegen/src/isa/bpf/inst.isle
++++ b/cranelift/codegen/src/isa/bpf/inst.isle
+@@ -43,6 +43,23 @@
+ 
+ (type MInst
+     (enum
++        ;;;; Pseudo-instructions ;;;;
++
++        ;; Marks the function entry. Pins each argument vreg to the register
++        ;; the ABI delivers it in.
++        (Args
++            (args VecArgPair))
++
++        ;; Marks a return. Pins each returned vreg to the register the ABI
++        ;; wants it in.
++        (Rets
++            (rets VecRetPair))
++
++        ;; Reads a register to keep its value alive. Encodes to nothing.
++        (DummyUse (reg Reg))
++
++        ;;;; Instructions ;;;;
++
+         ;; RFC 9669 table 5.
+         (Alu (alu_op AluOp) (class AluClass) (rd WritableReg) (rs1 Reg) (src AluSource))
+ 
+diff --git a/cranelift/codegen/src/isa/bpf/lower/isle.rs b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+index ab8ae2f..378c1e7 100644
+--- a/cranelift/codegen/src/isa/bpf/lower/isle.rs
++++ b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+@@ -12,8 +12,8 @@ use crate::ir::*;
+ use crate::isa::bpf::BpfBackend;
+ use crate::machinst::isle::*;
+ use crate::machinst::{
+-    CallArgList, CallRetList, InstOutput, Lower, MachInst, MachLabel, Reg, VCodeConstant,
+-    VCodeConstantData,
++    ArgPair, CallArgList, CallRetList, InstOutput, Lower, MachInst, MachLabel, Reg, RetPair,
++    VCodeConstant, VCodeConstantData,
+ };
+ use alloc::boxed::Box;
+ use alloc::vec::Vec;
+@@ -64,3 +64,5 @@ impl generated_code::Context for BpfIsleContext<'_, '_> {
+         self.backend.isa_flags.has_divmul64()
+     }
+ }
++type VecArgPair = Vec<ArgPair>;
++type VecRetPair = Vec<RetPair>;

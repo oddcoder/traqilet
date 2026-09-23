@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+Date: Sat, 5 Sep 2026 10:37:02 +0000
+Subject: [PATCH] cranelift: add the BPF memory instructions
+
+Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
+---
+ cranelift/codegen/src/isa/bpf/inst.isle     | 28 +++++++++++++++++++++
+ cranelift/codegen/src/isa/bpf/lower/isle.rs |  1 +
+ 2 files changed, 29 insertions(+)
+
+diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
+index aab5450..e738197 100644
+--- a/cranelift/codegen/src/isa/bpf/inst.isle
++++ b/cranelift/codegen/src/isa/bpf/inst.isle
+@@ -3,6 +3,22 @@
+ ;; RFC 9669 table 5. Neg, Mov, Movsx and End are handled separately.
+ (type AluOp (enum Add Sub Mul Div SDiv Or And Lsh Rsh Mod SMod Xor Arsh))
+ 
++;; RFC 9669 table 9
++(type MemSize (enum B H W DW))
++
++(type StackAMode (primitive StackAMode))
++
++;; The address of a load or a store. `RegOffset` is RFC 9669 section 5.1:
++;; a register plus the 16-bit `offset` of section 3.1. `Slot` is cranelift's:
++;; the register allocator asks for spill loads and stores before the frame
++;; size is known, so the address is a slot number until emission turns it
++;; into an offset from the stack pointer.
++(type AMode
++    (enum
++        (RegOffset (base Reg) (offset i16))
++        (Slot (slot StackAMode))
++    ))
++
+ ;; RFC 9669 table 3. Same instructions different word size.
+ (type AluClass (enum Alu32 Alu64))
+ 
+@@ -98,6 +114,18 @@
+         ;; RFC 9669 section 5.4.
+         (LoadImm64 (rd WritableReg) (src WideImm))
+ 
++        ;;;; RFC 9669 section 5.1
++        ;; rd = *(unsigned size *)(mem)
++        (Ldx (size MemSize) (rd WritableReg) (mem AMode))
++
++        ;;;; RFC 9669 section 5.1
++        ;; `*(size *)(mem) = rs
++        (Stx (size MemSize) (mem AMode) (rs Reg))
++
++        ;;;; RFC 9669 section 5.1
++        ;;*(size *)(mem) = imm
++        (St (size MemSize) (mem AMode) (imm i32))
++
+         ;;;; RFC 9669 table 7
+         (Ja (label MachLabel))
+ 
+diff --git a/cranelift/codegen/src/isa/bpf/lower/isle.rs b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+index f08a9b2..9798b3e 100644
+--- a/cranelift/codegen/src/isa/bpf/lower/isle.rs
++++ b/cranelift/codegen/src/isa/bpf/lower/isle.rs
+@@ -10,6 +10,7 @@ use crate::ir::immediates::*;
+ use crate::ir::types::*;
+ use crate::ir::*;
+ use crate::isa::bpf::BpfBackend;
++use crate::machinst::abi::StackAMode;
+ use crate::machinst::isle::*;
+ use crate::machinst::{
+     ArgPair, CallArgList, CallInfo, CallRetList, InstOutput, Lower, MachInst, MachLabel, Reg,

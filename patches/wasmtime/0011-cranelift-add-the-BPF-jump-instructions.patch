@@ -23,7 +23,7 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  2 files changed, 49 insertions(+), 2 deletions(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index b5c7599..a774aa4 100644
+index 5294304..aab5450 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
 @@ -22,6 +22,23 @@

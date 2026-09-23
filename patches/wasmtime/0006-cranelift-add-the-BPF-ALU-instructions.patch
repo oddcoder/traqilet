@@ -29,7 +29,7 @@ Signed-off-by: Ahmed Abdelraoof <ahmedsoliman@oddcoder.com>
  1 file changed, 77 insertions(+), 1 deletion(-)
 
 diff --git a/cranelift/codegen/src/isa/bpf/inst.isle b/cranelift/codegen/src/isa/bpf/inst.isle
-index b305c30..9e69215 100644
+index b305c30..dc3253f 100644
 --- a/cranelift/codegen/src/isa/bpf/inst.isle
 +++ b/cranelift/codegen/src/isa/bpf/inst.isle
 @@ -1,10 +1,86 @@
@@ -60,7 +60,7 @@ index b305c30..9e69215 100644
  (type MInst
      (enum
 -        (Placeholder)
-+        ;; RFC 9669 table 5.
++        ;; RFC 9669 table 5
 +        (Alu (alu_op AluOp) (class AluClass) (rd WritableReg) (rs1 Reg) (src AluSource))
 +
 +        ;; RFC 9669 table 5
